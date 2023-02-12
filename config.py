@@ -2,7 +2,7 @@
 import numpy as np
 
 ae_params = {
-    'debug_len': 10,
+    
 }
 
 trade_params = {
@@ -11,5 +11,6 @@ trade_params = {
 }
 
 general_params = {
-    'dataset_path': None,
+    'path': 'dataset_long_ohlc.pickle',
+    'debug_len': 10,
 }

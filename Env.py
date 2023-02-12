@@ -20,6 +20,7 @@ class Positions(Enum):
     def opposite(self):
         return Positions.Short if self == Positions.Long else Positions.Long
 
+#TODO: Change this class to a dictionary of dataframes, iterating over multiple stocks
 
 class TradingEnv(gym.Env):
 

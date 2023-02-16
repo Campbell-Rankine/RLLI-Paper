@@ -6,6 +6,7 @@ from enum import Enum
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+from rewards import *
 
 
 class Actions(Enum):
@@ -26,11 +27,13 @@ class TradingEnv(gym.Env):
 
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, df, window_size):
+    def __init__(self, df, window_size, key, rew_fn, starting_funds=10000, in_house=0.2):
         assert df.ndim == 2
 
+        self.r_fn = get_rew(rew_fn)
         self.seed()
-        self.df = df
+        self.df = df[key]
+        self.name = 'env_' + key
         self.window_size = window_size
         self.prices, self.signal_features = self._process_data()
         self.shape = (window_size, self.signal_features.shape[1])
@@ -38,6 +41,16 @@ class TradingEnv(gym.Env):
         # spaces
         self.action_space = spaces.Discrete(len(Actions))
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=self.shape, dtype=np.float64)
+
+        # profit/reward
+        self.in_house = in_house
+
+        self.starting_funds = starting_funds
+        self.total_funds = starting_funds
+        self.available_funds = (starting_funds) - (self.in_house * starting_funds) #Available funds to spend
+
+        self.profit = 0.
+        self.reward = 0.
 
         # episode
         self._start_tick = self.window_size
@@ -51,7 +64,6 @@ class TradingEnv(gym.Env):
         self._total_profit = None
         self._first_rendering = None
         self.history = None
-
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -83,7 +95,7 @@ class TradingEnv(gym.Env):
 
         self._update_profit(action)
 
-        trade = False
+        trade = False #Buy low sell high
         if ((action == Actions.Buy.value and self._position == Positions.Short) or
             (action == Actions.Sell.value and self._position == Positions.Long)):
             trade = True
@@ -178,11 +190,16 @@ class TradingEnv(gym.Env):
 
 
     def _process_data(self):
-        raise NotImplementedError
+        prices = self.df['close'].to_numpy()
+        features = self.df.drop('close', axis=1).to_numpy()
+        return prices, features
 
 
     def _calculate_reward(self, action):
+        #Depends on how we're going to output from the individual DDPG models.
+
         raise NotImplementedError
+
 
 
     def _update_profit(self, action):

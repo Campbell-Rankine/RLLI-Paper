@@ -2,7 +2,7 @@ import torch as T
 import torch.nn as nn
 import torch.nn.functional as F
 
-from Trader.utils import *
+from Trader_single.utils import *
 
 import os
 import ray
@@ -158,7 +158,7 @@ class Critic(nn.Module):
             print('path does not exist!')
 
 ### - DEFINE AGENT - ###
-from Trader.buffer import *
+from Trader_single.buffer import *
 class Agent(nn.Module):
     def __init__(self, alpha, beta, lr, dims, tau, cp, name, gamma=0.99, num_actions=138, obs_size=6,  max_size=1000000, h1=400,
                  h2=500, batch_size=30, w_decay=0.1):

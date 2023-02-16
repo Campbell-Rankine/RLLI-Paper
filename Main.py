@@ -6,9 +6,9 @@ import pandas as pd
 import collections
 import ray
 
-from Trader.network import *
-from Trader.utils import *
-from Trader.buffer import *
+from Trader_single.network import *
+from Trader_single.utils import *
+from Trader_single.buffer import *
 
 from Data.data import *
 from Data.data_utils import *
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     reward = get_rew(args.reward) #get reward function
     assert(callable(reward))
 
-    
+
 
     ### - Begin Loops - ###
 

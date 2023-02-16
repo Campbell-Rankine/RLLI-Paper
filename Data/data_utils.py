@@ -232,47 +232,9 @@ def process_command_line_arguments() -> argparse.Namespace:
     ### - Global Params - ###
     parser.add_argument("-debug", "--debug", dest="debug", metavar="debug", default = False,
                         type=bool, help="debug flag, minimize data to make things quicker to debug")
-    
-    parser.add_argument("-optim", "--optim", dest="optim", metavar="optim", default = False,
-                        type=bool, help="self optimize using Bayesian Optimization during training")
-    
-    parser.add_argument("-d", "--d", dest="d", metavar="d", default = False,
-                        type=bool, help="Download default s&p 500 data")
-    
-    parser.add_argument("-clip", "--clip", dest="clip", metavar="clip", default = False,
-                        type=bool, help="Gradient clipping: clipped at 10")
-    
-    ### - Network Params - ###
 
-    parser.add_argument("-loss", "--loss", dest="loss", metavar="loss", default = 'BCE',
-                        type=str, help="Loss for reconstruction objective")
-
-    parser.add_argument("-latent", "--latent", dest="latent", metavar="latent", default = 138,
-                        type=int, help="latent size")
-
-    parser.add_argument("-window", "--window", dest="window", metavar="window", default = 30,
-                        type=int, help="default window training size")
-
-    parser.add_argument("-batch", "--batch", dest="batch", metavar="batch", default = 4,
-                        type=int, help="default batch size")
-
-    parser.add_argument("-sched", "--sched", dest="sched", metavar="sched", default = False,
-                        type=bool, help="Lr scheduler switch")
-    
-    parser.add_argument("-lr", "--lr", dest="lr", metavar="lr", default = 1e-5,
-                        type=float, help="default learning rate")
-
-    parser.add_argument("-e", "--e", dest="epochs", metavar="epochs", default = 64,
-                        type=int, help="default num epochs")
-
-    parser.add_argument("-dw", "--dw", dest="dw", metavar="dw", default = 2,
-                        type=int, help="Number of dataloader workers")
-
-    parser.add_argument("-id", "--id", dest="in_dest", metavar="in_dest", default = None,
-                        type=str, help="input destination. Either change input flag or change the destination in the constants.py folder")
-    
-    parser.add_argument("-adam", "--adam", dest="adam", metavar="adam", default = None,
-                        type=tuple, help="Enter custom adam parameters")
+    parser.add_argument("-ind", "--ind", dest="ind", metavar="ind", default = False,
+                        type=bool, help="Flag to include the quantstats indicator list")
 
     args = parser.parse_args()
 

@@ -1,6 +1,6 @@
 import torch as T
 import torch.nn.functional as F
-from Trader_MADDPG.utils import Agent
+from Trader_MADDPG.network import Agent
 from Env import *
 
 class MADDPG:
@@ -28,7 +28,7 @@ class MADDPG:
 
         
         ### - Objects - ###
-        self.agents = {}
+        self.agents = []
         
         ### - init the agents list - ###
         for i in range(len(stock_keys)):

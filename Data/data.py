@@ -8,7 +8,7 @@ import ray
 import yahoo_fin.stock_info as si
 from tqdm import tqdm
 
-from data_utils import *
+from Data.data_utils import *
 import pickle
 import os
 from pathlib import Path

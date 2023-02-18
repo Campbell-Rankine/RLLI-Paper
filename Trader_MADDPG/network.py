@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 from Trader_MADDPG.utils import *
+from Env import *
 
 ### - Note we will have 1 agent per stock. Stock environments require a continuous output - ###
 
@@ -61,7 +62,6 @@ class Actor(nn.Module):
         x = F.relu(self.ln1(self.fc1(state)))
         x = F.relu(self.ln2(self.fc2(x)))
         pi = self.activation(self.pi(x), dim=1)
-
         return pi
 
     def save_checkpoint(self):
@@ -110,8 +110,8 @@ class Critic(nn.Module):
         self.action_value = nn.Linear(self.n_actions, fc2) #Action Value
 
         f3 = 0.003
-        self.q = self.q = nn.Linear(fc2, 1) # Actor Gradient Approximation
-        nn.init.uniform_(self.pi.weight, -f3, f3) #weight init for stability
+        self.q = nn.Linear(fc2, 1) # Actor Gradient Approximation
+        nn.init.uniform_(self.q.weight, -f3, f3) #weight init for stability
         nn.init.uniform_(self.fc1.bias.data, -f3, f3)
 
         ### - Other Training Objects - ###
@@ -142,7 +142,7 @@ class Critic(nn.Module):
 
 ### - Individual Agents - ###
 class Agent(nn.Module):
-    def __init__(self, env, actor_dims, critic_dims, n_actions, n_agents, stock, dir='/Users/bigc/RLLI-Paper/checkpoint/',
+    def __init__(self, env: TradingEnv, actor_dims, critic_dims, n_actions, n_agents, stock, dir='/Users/bigc/RLLI-Paper/checkpoint/',
                     alpha=0.01, beta=0.01, fc1=64, 
                     fc2=64, gamma=0.95, tau=0.01):
         """
@@ -171,10 +171,11 @@ class Agent(nn.Module):
         ### - Copy Attributes - ###
         self.gamma = gamma
         self.tau = tau
-        self.n_actions = n_actions
+        self.n_actions = int(n_actions)
         self.name = 'agent_' + stock
         self.env = env
-        self.timestep = self.env.t
+        self.obs = self.env.display_config()
+        self.timestep = self.env._current_tick
 
         ### - Create Networks - ###
         self.noise = OUActionNoise(mu=np.zeros(self.n_actions))
@@ -185,12 +186,23 @@ class Agent(nn.Module):
         self.target_actor = Actor(alpha, actor_dims, fc1, fc2, self.n_actions, self.name+'_target_actor')
         self.target_critic = Critic(beta, critic_dims, fc1, fc2, self.n_actions, self.name+'_target_critic')
 
-    def choose_action(self, observation):
-        state = T.tensor([observation], dtype=T.float).to(self.actor.device)
-        actions = self.actor.forward(state)
-        action = actions + self.noise()
+    def reset(self):
+        self.obs = self.env.reset()
 
-        return action.detach().cpu().numpy()[0]
+    def next_step(self):
+        observation, step_reward, _done, info = self.env.step(self.choose_action())
+        self.obs = observation
+        return observation, step_reward, _done, info
+
+    def choose_action(self):
+        state = T.tensor([self.obs], dtype=T.float).to(self.actor.device)
+        actions = self.actor.forward(state)
+        actions = actions.detach().cpu().numpy() + self.noise()
+        actions = actions[0][0]
+        if actions[0] > actions[1]:
+            return 1
+        return 0
+        
 
     def update_network_parameters(self, tau=None):
         if tau is None:

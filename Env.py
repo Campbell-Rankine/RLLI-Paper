@@ -7,19 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from rewards import *
-
-
-class Actions(Enum):
-    Sell = 0
-    Buy = 1
-
-
-class Positions(Enum):
-    Short = 0
-    Long = 1
-
-    def opposite(self):
-        return Positions.Short if self == Positions.Long else Positions.Long
+from utils import *
 
 #TODO: Change this class to a dictionary of dataframes, iterating over multiple stocks
 
@@ -27,16 +15,21 @@ class TradingEnv(gym.Env):
 
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, df, window_size, key, rew_fn, starting_funds=10000, in_house=0.2):
-        assert df.ndim == 2
+    def __init__(self, df, window_size, key, rew_fn='base', starting_funds=10000, in_house=0.2, owned=0):
+
 
         self.r_fn = get_rew(rew_fn)
         self.seed()
         self.df = df[key]
+        assert self.df.ndim == 2
         self.name = 'env_' + key
         self.window_size = window_size
         self.prices, self.signal_features = self._process_data()
         self.shape = (window_size, self.signal_features.shape[1])
+
+        ### - Starting with some stock already in the inventory? - ###
+        self.num_owned_0 = owned
+        self.num_owned = owned
 
         # spaces
         self.action_space = spaces.Discrete(len(Actions))
@@ -80,6 +73,11 @@ class TradingEnv(gym.Env):
         self._total_profit = 1.  # unit
         self._first_rendering = True
         self.history = {}
+        self.num_owned = self.num_owned_0
+        self.total_funds = self.starting_funds
+        self.profit = 0.
+        self.reward = 0.
+        self.available_funds = (self.starting_funds) - (self.in_house * self.starting_funds)
         return self._get_observation()
 
 
@@ -114,7 +112,7 @@ class TradingEnv(gym.Env):
         self._update_history(info)
 
         return observation, step_reward, self._done, info
-
+        
 
     def _get_observation(self):
         return self.signal_features[(self._current_tick-self.window_size+1):self._current_tick+1]
@@ -197,10 +195,26 @@ class TradingEnv(gym.Env):
 
     def _calculate_reward(self, action):
         #Depends on how we're going to output from the individual DDPG models.
+        return self.r_fn(action, self.num_owned, self.prices, self._current_tick, self.available_funds)
 
-        raise NotImplementedError
+    def display_config(self, obs=None):
+        """
+        Display the main characteristics of the environment, if calling at the beginning of training
+        this function will call reset and return the observation for ease of use
 
+        Args:
+            obs:            (numpy.NDArray - (float)) - Most recent observable model input
+        """
+        if obs is None:
+            obs = self.reset()
+        print('Observation Shape: ' + str(obs.shape))
+        print('Reward Function: %s' % self.r_fn.__name__)
+        print('Starting Funds: %.2f' % self.starting_funds)
+        print('Available Funds %.2f' % self.available_funds)
+        print('Timestep: %d' % self._current_tick)
+        print('Number of Stock Owned: %d' % self.num_owned)
 
+        return obs
 
     def _update_profit(self, action):
         raise NotImplementedError

@@ -32,10 +32,18 @@ class MADDPG:
         
         ### - init the agents list - ###
         for i in range(len(stock_keys)):
+            env_args['key'] = stock_keys[i]
             self.agents.append(Agent(TradingEnv(**env_args), self.actor_dims, self.critic_dims, self.n_actions, self.n_agents, stock_keys[i], 
                                     alpha=self.alpha, beta=self.beta, fc1=self.fc1, fc2=self.fc2, gamma=self.gamma, 
                                     tau=self.tau))
     
+
+    def obs_format(self, obs):
+        state = np.array([])
+        for obs_ in obs:
+            state = np.concatenate([state, obs_])
+        return state
+
     def save_checkpoint(self):
         print('... saving checkpoint ...')
         for agent in self.agents:
@@ -45,6 +53,44 @@ class MADDPG:
         print('... loading checkpoint ...')
         for agent in self.agents:
             agent.load_models()
+
+    def step(self, memory, total_steps, episode_steps):
+        #TODO: This is the main function that needs testing
+        """
+        This functions steps through one training iteration of the main loop and returns the relevant
+        info needed inside the main file. Done in here since overall the project structure
+        suggests using environments inside their respective classes instead of the main loop.
+        """
+        observations, actions, step_rewards, _dones, infos = []
+        skips = []
+        for i, agent in enumerate(self.agents):
+            if i in skips: #skip if this stock is done, continue training on other steps
+                continue
+            observation, action, step_reward, _done, info = agent.next_step() #call environment run
+            if _done: #skip mechanic
+                skips.append(i)
+            observations.append(observation) #build all observations
+            actions.append(action)
+            step_rewards.append(step_reward)
+            _dones.append(_done)
+            infos.append(info)
+        
+        ### - Final Processing - ###
+        state= self.obs_format(observations)
+        state_p = self.obs_format(self.obs_p)
+        memory.store_transition(self.obs_p, state_p, actions, step_rewards, observations, state, _dones)
+
+        if total_steps % 100 == 0:
+            self.learn(memory)
+
+        self.obs_p = observations
+
+        score += sum(step_rewards)
+
+        total_steps += 1
+        episode_step += 1
+
+        return score, total_steps, episode_steps, infos
 
     def choose_action(self, raw_obs):
         actions = []
@@ -112,5 +158,7 @@ class MADDPG:
         raise NotImplementedError
 
     def reset_environments(self):
+        self.obs_p = []
         for x in self.agents:
-            x.env.reset()
+            x.reset()
+            self.obs_p.append(x.obs)

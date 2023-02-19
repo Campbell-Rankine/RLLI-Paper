@@ -188,11 +188,13 @@ class Agent(nn.Module):
 
     def reset(self):
         self.obs = self.env.reset()
+        self.timestep = self.env._start_tick
 
     def next_step(self):
-        observation, step_reward, _done, info = self.env.step(self.choose_action())
+        action = self.choose_action()
+        observation, step_reward, _done, info = self.env.step(action)
         self.obs = observation
-        return observation, step_reward, _done, info
+        return observation, action, step_reward, _done, info
 
     def choose_action(self):
         state = T.tensor([self.obs], dtype=T.float).to(self.actor.device)

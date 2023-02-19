@@ -108,7 +108,6 @@ if __name__ == '__main__':
 
     print('Create Trader')
     #TODO: Make sure with new training structure that this input shape will work over all key lists
-    trader = Agent(args.a, args.b, args.lr, data[keys[0]].shape, args.t, '/Users/bigc/RLLI-Paper/checkpoint/', 's&ptrader')
 
     print('Create Env')
     reward = get_rew(args.reward) #get reward function

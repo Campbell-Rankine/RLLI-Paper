@@ -217,7 +217,14 @@ class TradingEnv(gym.Env):
         return obs
 
     def _update_profit(self, action):
-        raise NotImplementedError
+        if action == 0 and not self.num_owned <= 0:
+            self.num_owned -= 1
+        elif self.available_funds - self.prices[self._current_tick] >= 0:
+            self.num_owned += 1
+        if self._current_tick == self._start_tick:
+            self.profit = 1
+        self.profit = ((self.num_owned * self.prices[self._current_tick]) + (self.available_funds - self.prices[self._current_tick])) - self.profit
+        self._total_profit += self.profit
 
 
     def max_possible_profit(self):  # trade fees are ignored

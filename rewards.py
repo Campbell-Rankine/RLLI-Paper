@@ -23,10 +23,8 @@ def reward_1(action, owned, prices, tick, avail):
         opp = 1
 
     ### - Profit - ###
-    if avail - prices[tick] < 0:
+    if avail - prices[tick] < 0 or owned + diff < 0:
         return -10
-    if owned == 0:
-        a_prof = 0
     a_prof = (((owned + diff) * prices[tick]) + (avail - prices[tick])) - ((owned * prices[tick]) + avail) #action profit
     if owned == 0:
         o_prof = 0
@@ -34,7 +32,8 @@ def reward_1(action, owned, prices, tick, avail):
         o_prof = (((owned + opp) * prices[tick]) + (avail + prices[tick])) - ((owned * prices[tick]) + avail) #opposite
 
     max_p = np.max([a_prof, o_prof])
-    print(a_prof, o_prof, max_p, (a_prof-o_prof) / max_p)
+    if a_prof == 0 and o_prof == 0:
+        return 0.
     return (a_prof - o_prof) / max_p
 
 def get_rew(input: str):

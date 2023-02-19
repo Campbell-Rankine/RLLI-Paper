@@ -40,3 +40,10 @@ Using the VGG-16 model we change the final output classification to a vector of 
 ---
 Name: Base
 Definitions: Rew_{base} = ...
+
+Notes: This reward function will be temporary until a correct maximization function will be coded. Until then, this incorrect function will be a place holder.
+
+## MADDPG
+---
+
+As of right now MADDPG step function has not been tested

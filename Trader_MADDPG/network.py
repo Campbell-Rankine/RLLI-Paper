@@ -123,10 +123,10 @@ class Critic(nn.Module):
 
     def forward(self, state, action):
         state_value = self.fc1(state)
-        state_value = self.bn1(state_value)
+        state_value = self.ln1(state_value)
         state_value = F.relu(state_value)
         state_value = self.fc2(state_value)
-        state_value = self.bn2(state_value)
+        state_value = self.ln2(state_value)
 
         action_value = F.relu(self.action_value(action))
         state_action_value = F.relu(T.add(state_value, action_value))

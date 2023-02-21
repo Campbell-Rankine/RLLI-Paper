@@ -29,6 +29,7 @@ class MADDPG:
         
         ### - Objects - ###
         self.agents = []
+        self.obs_p = []
         
         ### - init the agents list - ###
         for i in range(len(stock_keys)):
@@ -36,12 +37,13 @@ class MADDPG:
             self.agents.append(Agent(TradingEnv(**env_args), self.actor_dims, self.critic_dims, self.n_actions, self.n_agents, stock_keys[i], 
                                     alpha=self.alpha, beta=self.beta, fc1=self.fc1, fc2=self.fc2, gamma=self.gamma, 
                                     tau=self.tau))
+            self.obs_p.append(np.zeros(self.actor_dims))
     
 
     def obs_format(self, obs):
-        state = np.array([])
-        for obs_ in obs:
-            state = np.concatenate([state, obs_])
+        state = obs[0]
+        for obs_ in obs[1:]:
+            state = np.hstack([state, obs_])
         return state
 
     def save_checkpoint(self):
@@ -61,14 +63,12 @@ class MADDPG:
         info needed inside the main file. Done in here since overall the project structure
         suggests using environments inside their respective classes instead of the main loop.
         """
-        observations, actions, step_rewards, _dones, infos = []
+        observations = []; actions=[]; step_rewards=[]; _dones=[]; infos=[]
         skips = []
         for i, agent in enumerate(self.agents):
             if i in skips: #skip if this stock is done, continue training on other steps
                 continue
             observation, action, step_reward, _done, info = agent.next_step() #call environment run
-            if _done: #skip mechanic
-                skips.append(i)
             observations.append(observation) #build all observations
             actions.append(action)
             step_rewards.append(step_reward)
@@ -78,6 +78,8 @@ class MADDPG:
         ### - Final Processing - ###
         state= self.obs_format(observations)
         state_p = self.obs_format(self.obs_p)
+
+        ### - Store - ###
         memory.store_transition(self.obs_p, state_p, actions, step_rewards, observations, state, _dones)
 
         if total_steps % 100 == 0:
@@ -90,7 +92,7 @@ class MADDPG:
         total_steps += 1
         episode_step += 1
 
-        return score, total_steps, episode_steps, infos
+        return score, total_steps, episode_steps, infos, _dones
 
     def choose_action(self, raw_obs):
         actions = []

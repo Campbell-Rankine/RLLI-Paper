@@ -25,9 +25,9 @@ class MultiAgentReplayBuffer:
 
         for i in range(self.n_agents):
             self.actor_state_memory.append(
-                            np.zeros((self.mem_size, self.actor_dims[i])))
+                            np.zeros((self.mem_size, self.actor_dims)))
             self.actor_new_state_memory.append(
-                            np.zeros((self.mem_size, self.actor_dims[i])))
+                            np.zeros((self.mem_size, self.actor_dims)))
             self.actor_action_memory.append(
                             np.zeros((self.mem_size, self.n_actions)))
 

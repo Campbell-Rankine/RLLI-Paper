@@ -23,6 +23,7 @@ class TradingEnv(gym.Env):
         self.df = df[key]
         assert self.df.ndim == 2
         self.name = 'env_' + key
+        self.key = key
         self.window_size = window_size
         self.prices, self.signal_features = self._process_data()
         self.shape = (window_size, self.signal_features.shape[1])
@@ -207,6 +208,8 @@ class TradingEnv(gym.Env):
         """
         if obs is None:
             obs = self.reset()
+        print('Ticker: %s' % self.key)
+        print('------------------------------------------')
         print('Observation Shape: ' + str(obs.shape))
         print('Reward Function: %s' % self.r_fn.__name__)
         print('Starting Funds: %.2f' % self.starting_funds)

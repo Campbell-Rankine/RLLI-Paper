@@ -36,6 +36,20 @@ def reward_1(action, owned, prices, tick, avail):
         return 0.
     return (a_prof - o_prof) / max_p
 
+def reward_2(action, owned, prices, tick, avail):
+    """
+    Simpler reward function simply defined by the total profit over all agents
+
+    Args:
+        action:             (float) - Action output from the network
+        owned:              (int) - Number of this stock currently owned
+        prices:             (numpy.NDArray - (float)) - Array of prices for all timesteps
+        tick:               (int) - current timestep
+        avail:              (float) - Available funds for calculating profit/net worth
+    """
+    
+    raise NotImplementedError
+
 def get_rew(input: str):
     if input == 'base':
         return reward_1

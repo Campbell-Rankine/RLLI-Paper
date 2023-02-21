@@ -43,7 +43,12 @@ Definitions: Rew_{base} = ...
 
 Notes: This reward function will be temporary until a correct maximization function will be coded. Until then, this incorrect function will be a place holder.
 
-## MADDPG
+## MADDPG:
 ---
 
-As of right now MADDPG step function has not been tested
+Currently the action space is limited to a discrete setting within agent environments. This is to simplify the environment development process for the time being. 
+
+#### Future Development:
+---
+
+Continuous action space, similar definition of buy sell Enum objects. Environment constraints class allowing for things like clipping the number of stocks each agent can trade at one timestep, limiting the variance of the portfolio etc.

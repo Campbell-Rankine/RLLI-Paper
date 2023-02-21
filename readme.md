@@ -39,9 +39,12 @@ Using the VGG-16 model we change the final output classification to a vector of 
 #### Base
 ---
 Name: Base
-Definitions: Rew_{base} = ...
+Definitions: Rew_{base} = (Profit made by taking action - profit made by taking opposite action) / Max(Action_p, Opposite_p)
+Goal: Maximize correct action choices and profit over each timestep.
 
-Notes: This reward function will be temporary until a correct maximization function will be coded. Until then, this incorrect function will be a place holder.
+Name: Simple
+Definition: Sum(Agent profit)
+Goal: Maximize profit
 
 ## MADDPG:
 ---

@@ -38,8 +38,10 @@ Using the VGG-16 model we change the final output classification to a vector of 
 
 #### Base
 ---
-Name: Base
+Name: Base 
+
 Definitions: Rew_{base} = (Profit made by taking action - profit made by taking opposite action) / Max(Action_p, Opposite_p)
+
 Goal: Maximize correct action choices and profit over each timestep.
 
 Name: Simple

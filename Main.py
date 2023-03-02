@@ -6,15 +6,18 @@ import pandas as pd
 import collections
 import ray
 
-from Trader_single.network import *
-from Trader_single.utils import *
-from Trader_single.buffer import *
+from Trader_MADDPG.buffer import *
+from Trader_MADDPG.MADDPG import *
+from Trader_MADDPG.network import *
+from Trader_MADDPG.utils import *
 
-from Data.data import *
+
 from Data.data_utils import *
+from Data.data import *
 
-from AE.AE import *
-from AE.network_utils import *
+from Env import *
+from rewards import *
+from utils import *
 
 from rewards import *
 from config import *
@@ -83,7 +86,7 @@ def parse_args():
                         type=bool, help="Gym Rendering Flag")
 
     ### - Misc. Args - ###
-    parser.add_argument("-reward", "--reward", dest="reward", metavar="reward", default = 'Base',
+    parser.add_argument("-reward", "--reward", dest="reward", metavar="reward", default = 'base',
                         type=str, help="Reward input. See Doc File for reward function names, explainations, etc.")
     
     args = parser.parse_args()
@@ -92,10 +95,11 @@ def parse_args():
 
 if __name__ == '__main__':
     print('Begin Training')
+    
 
     args = parse_args()
 
-    ### - Load Data - ###
+    """### - Load Data - ###
     data = load_dataset(general_params['path'])
     keys = list(data.keys())
 
@@ -112,8 +116,23 @@ if __name__ == '__main__':
     print('Create Env')
     reward = get_rew(args.reward) #get reward function
     assert(callable(reward))
+    """
+    ### - Basic inits for the project - ###
+    data = load_dataset('C:\Code\RLLI-Paper\dataset_long_ind.pickle')
+    keys = list(data.keys())[0:10] #Useful in the experiments tab to keep everything a little smaller
+
+    env_args = { #Environments args to be passed to each agent
+        'df': data,
+        'window_size': 1,
+        'key': keys,
+    }
+
+    bots = MADDPG(134, len(keys) * 134, keys, 2, env_args) #init bots
+
+    mem = MultiAgentReplayBuffer(1000000, len(keys) * 134, 134, 2, len(keys), 1)
 
 
+    score, total_steps, episode_steps, infos, _dones = bots.step(mem, 0, 0)
 
     ### - Begin Loops - ###
 

@@ -71,7 +71,7 @@ class Actor(nn.Module):
         self.load_state_dict(T.load(self.cp_))
 
 class Critic(nn.Module):
-    def __init__(self, beta, in_size, fc1, fc2, n_actions, name, dir='/Users/bigc/RLLI-Paper/checkpoint/'):
+    def __init__(self, beta, in_size, fc1, fc2, n_actions, n_agents, name, dir='/Users/bigc/RLLI-Paper/checkpoint/'):
         """
         Critic Class:
 
@@ -91,6 +91,7 @@ class Critic(nn.Module):
         self.in_size = in_size
         self.n_actions = n_actions
         self.beta = beta
+        self.n_agents = n_agents
 
         ### - Network Inits - ###
         self.fc1 = nn.Linear(in_size, fc1)
@@ -107,7 +108,7 @@ class Critic(nn.Module):
 
         self.ln2 = nn.LayerNorm(fc2) #layer norm
 
-        self.action_value = nn.Linear(self.n_actions, fc2) #Action Value
+        self.action_value = nn.Linear(self.n_actions * self.n_agents, fc2) #Action Value
 
         f3 = 0.003
         self.q = nn.Linear(fc2, 1) # Actor Gradient Approximation
@@ -129,7 +130,7 @@ class Critic(nn.Module):
         state_value = self.ln2(state_value)
 
         action_value = F.relu(self.action_value(action))
-        state_action_value = F.relu(T.add(state_value, action_value))
+        state_action_value = F.relu(state_value + action_value)
         state_action_value = self.q(state_action_value)
 
         return state_action_value
@@ -176,15 +177,18 @@ class Agent(nn.Module):
         self.env = env
         self.obs = self.env.display_config()
         self.timestep = self.env._current_tick
+        self.n_agents = n_agents
+        self.actor_loss = None
+        self.critic_loss = None
 
         ### - Create Networks - ###
         self.noise = OUActionNoise(mu=np.zeros(self.n_actions))
 
         self.actor = Actor(alpha, actor_dims, fc1, fc2, self.n_actions, self.name+'_actor')
-        self.critic = Critic(beta, critic_dims, fc1, fc2, self.n_actions, self.name+'_critic')
+        self.critic = Critic(beta, critic_dims, fc1, fc2, self.n_actions, self.n_agents, self.name+'_critic')
 
         self.target_actor = Actor(alpha, actor_dims, fc1, fc2, self.n_actions, self.name+'_target_actor')
-        self.target_critic = Critic(beta, critic_dims, fc1, fc2, self.n_actions, self.name+'_target_critic')
+        self.target_critic = Critic(beta, critic_dims, fc1, fc2, self.n_actions, self.n_agents, self.name+'_target_critic')
 
     def reset(self):
         self.obs = self.env.reset()
@@ -197,7 +201,7 @@ class Agent(nn.Module):
         return observation, action, step_reward, _done, info
 
     def choose_action(self):
-        state = T.tensor([self.obs], dtype=T.float).to(self.actor.device)
+        state = T.tensor([self.obs], dtype=T.float)#.to(self.actor.device)
         actions = self.actor.forward(state)
         actions = actions.detach().cpu().numpy() + self.noise()
         actions = actions[0][0]
@@ -207,30 +211,22 @@ class Agent(nn.Module):
         
 
     def update_network_parameters(self, tau=None):
+        """
+        Function takes some kind of weight (Tau) and will merge weights and parameters from the normal -> target networks
+        """
         if tau is None:
             tau = self.tau
 
-        target_actor_params = self.target_actor.named_parameters()
-        actor_params = self.actor.named_parameters()
+        target_actor_params = self.target_actor.parameters() #Access all target/normal params for soft update
+        actor_params = self.actor.parameters()
+        for t_param, param in zip(target_actor_params, actor_params):
+            t_param.data.copy_(tau*param + (1-tau)*t_param) #Copy the soft update to the target model
 
-        target_actor_state_dict = dict(target_actor_params)
-        actor_state_dict = dict(actor_params)
-        for name in actor_state_dict: #perform weighted merge
-            actor_state_dict[name] = tau*actor_state_dict[name].clone() + \
-                    (1-tau)*target_actor_state_dict[name].clone()
+        target_critic_params = self.target_critic.parameters() #Access all target/normal params for soft update
+        critic_params = self.critic.parameters() #Copy the soft update to the target model
 
-        self.target_actor.load_state_dict(actor_state_dict)
-
-        target_critic_params = self.target_critic.named_parameters()
-        critic_params = self.critic.named_parameters()
-
-        target_critic_state_dict = dict(target_critic_params)
-        critic_state_dict = dict(critic_params)
-        for name in critic_state_dict:
-            critic_state_dict[name] = tau*critic_state_dict[name].clone() + \
-                    (1-tau)*target_critic_state_dict[name].clone()
-
-        self.target_critic.load_state_dict(critic_state_dict)
+        for t_param, param in zip(target_critic_params, critic_params):
+            t_param.data.copy_(tau*param + (1-tau)*t_param)
 
     def save_models(self):
         self.actor.save_checkpoint()

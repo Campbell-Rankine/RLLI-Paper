@@ -116,7 +116,8 @@ class TradingEnv(gym.Env):
         
 
     def _get_observation(self):
-        return self.signal_features[(self._current_tick-self.window_size+1):self._current_tick+1]
+        obs = self.signal_features[(self._current_tick-self.window_size+1):self._current_tick+1]
+        return obs
 
 
     def _update_history(self, info):
@@ -189,6 +190,7 @@ class TradingEnv(gym.Env):
 
 
     def _process_data(self):
+        
         prices = self.df['close'].to_numpy()
         features = self.df.drop('close', axis=1).to_numpy()
         return prices, features
@@ -208,6 +210,7 @@ class TradingEnv(gym.Env):
         """
         if obs is None:
             obs = self.reset()
+        print(obs)
         print('Ticker: %s' % self.key)
         print('------------------------------------------')
         print('Observation Shape: ' + str(obs.shape))

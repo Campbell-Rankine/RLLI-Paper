@@ -119,7 +119,7 @@ if __name__ == '__main__':
 
     if args.debug:
         keys = keys[:general_params['debug_len']] #Debug flag application
-        epochs = 1
+        epochs = 100
 
     print('Num Stocks: %d' % len(keys))
 
@@ -133,12 +133,12 @@ if __name__ == '__main__':
 
     bots = MADDPG(134, len(keys) * 134, keys, 2, env_args, args.verbose) #init bots
 
-    mem = MultiAgentReplayBuffer(1000, len(keys) * 134, 134, 2, len(keys), 1)
+    mem = MultiAgentReplayBuffer(100000, len(keys) * 134, 134, 2, len(keys), 1)
 
     total_steps = 0
     total_score = 0
 
-    for i in range(epochs): #Start of main loop
+    for i in range(epochs+1): #Start of main loop
         bots.reset_environments() #Basic loggers and trackers
         score = 0
         dones = [False]*bots.n_agents

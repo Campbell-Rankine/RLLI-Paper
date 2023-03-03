@@ -2,18 +2,19 @@ import torch as T
 import torch.nn.functional as F
 from Trader_MADDPG.network import Agent
 from Env import *
+from config import *
 
 class MADDPG:
-    def __init__(self, actor_dims, critic_dims, stock_keys, n_actions, env_args: dict,
+    def __init__(self, actor_dims, critic_dims, stock_keys, n_actions, env_args: dict, verbose,
                  scenario='s&p500',  timestep_0=30, alpha=0.01, beta=0.01, fc1=64, 
                  fc2=64, gamma=0.99, tau=0.01, cp_='/Users/bigc/RLLI-Paper/checkpoint/'):
         """
         Actual Class containing all agents. See network file for information on params
         """
         ### - Copy Attributes - ###
+        self.verbose = verbose
         self.actor_dims = actor_dims
         self.critic_dims = critic_dims
-        self.n_agents = len(stock_keys)
         self.n_actions = n_actions
         self.alpha = alpha
         self.beta = beta
@@ -24,21 +25,19 @@ class MADDPG:
         self.cp_ = cp_
         self.timestep_0 = timestep_0
         self.current_t = timestep_0
-
-
         
         ### - Objects - ###
         self.agents = []
         self.obs_p = []
+        self.n_agents = len(stock_keys)
         
         ### - init the agents list - ###
         for i in range(len(stock_keys)):
             env_args['key'] = stock_keys[i]
             self.agents.append(Agent(TradingEnv(**env_args), self.actor_dims, self.critic_dims, self.n_actions, self.n_agents, stock_keys[i], 
-                                    alpha=self.alpha, beta=self.beta, fc1=self.fc1, fc2=self.fc2, gamma=self.gamma, 
+                                    self.verbose, alpha=self.alpha, beta=self.beta, fc1=self.fc1, fc2=self.fc2, gamma=self.gamma, 
                                     tau=self.tau))
             self.obs_p.append(np.zeros(self.actor_dims))
-    
 
     def obs_format(self, obs):
         state = obs[0]
@@ -56,7 +55,7 @@ class MADDPG:
         for agent in self.agents:
             agent.load_models()
 
-    def step(self, memory, total_steps, episode_steps):
+    def step(self, memory, total_steps, episode_steps, score):
         #TODO: This is the main function that needs testing
         """
         This functions steps through one training iteration of the main loop and returns the relevant
@@ -90,7 +89,14 @@ class MADDPG:
         score += sum(step_rewards)
 
         total_steps += 1
-        episode_step += 1
+        episode_steps += 1
+
+        if total_steps % 50 == 0:
+            m_owned = sum([x.env.num_owned for x in self.agents]) / self.n_agents
+            m_profit = sum([x.env.profit for x in self.agents]) / self.n_agents
+            m_avail = sum([x.env.available_funds for x in self.agents]) / len(self.agents)
+            print('Mean Number of Stocks Owned: %.2f, Mean Profit: %.2f, Mean Available Funds %.2f' % (m_owned, m_profit, m_avail))
+
 
         return score, total_steps, episode_steps, infos, _dones
 
@@ -157,6 +163,17 @@ class MADDPG:
             agent.update_network_parameters()
 
     def update_environments(self):
+        raise NotImplementedError
+
+    def get_renders(self, iteration):
+        print('Rendering Decision History')
+        for x in self.agents:
+            fpath = general_params['render_save'] + x.name + '_' + str(iteration) + '.png'
+            x.env.render_all()
+            x.env.save_rendering(fpath)
+            plt.clf()
+
+    def _get_collab_reward(self):
         raise NotImplementedError
 
     def reset_environments(self):

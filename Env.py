@@ -190,7 +190,7 @@ class TradingEnv(gym.Env):
 
 
     def _process_data(self):
-        
+        self.df = self.df.head(600)
         prices = self.df['close'].to_numpy()
         features = self.df.drop('close', axis=1).to_numpy()
         return prices, features
@@ -200,7 +200,7 @@ class TradingEnv(gym.Env):
         #Depends on how we're going to output from the individual DDPG models.
         return self.r_fn(action, self.num_owned, self.prices, self._current_tick, self.available_funds)
 
-    def display_config(self, obs=None):
+    def display_config(self, verbose, obs=None):
         """
         Display the main characteristics of the environment, if calling at the beginning of training
         this function will call reset and return the observation for ease of use
@@ -210,26 +210,29 @@ class TradingEnv(gym.Env):
         """
         if obs is None:
             obs = self.reset()
-        print(obs)
-        print('Ticker: %s' % self.key)
-        print('------------------------------------------')
-        print('Observation Shape: ' + str(obs.shape))
-        print('Reward Function: %s' % self.r_fn.__name__)
-        print('Starting Funds: %.2f' % self.starting_funds)
-        print('Available Funds %.2f' % self.available_funds)
-        print('Timestep: %d' % self._current_tick)
-        print('Number of Stock Owned: %d' % self.num_owned)
+        if verbose:
+            print(obs)
+            print('Ticker: %s' % self.key)
+            print('------------------------------------------')
+            print('Observation Shape: ' + str(obs.shape))
+            print('Reward Function: %s' % self.r_fn.__name__)
+            print('Starting Funds: %.2f' % self.starting_funds)
+            print('Available Funds %.2f' % self.available_funds)
+            print('Timestep: %d' % self._current_tick)
+            print('Number of Stock Owned: %d' % self.num_owned)
 
         return obs
 
     def _update_profit(self, action):
         if action == 0 and not self.num_owned <= 0:
             self.num_owned -= 1
+            self.available_funds += self.prices[self._current_tick]
         elif self.available_funds - self.prices[self._current_tick] >= 0:
             self.num_owned += 1
+            self.available_funds -= self.prices[self._current_tick]
         if self._current_tick == self._start_tick:
             self.profit = 1
-        self.profit = ((self.num_owned * self.prices[self._current_tick]) + (self.available_funds - self.prices[self._current_tick])) - self.profit
+        self.profit = ((self.num_owned * self.prices[self._current_tick]) + self.available_funds) - self.profit
         self._total_profit += self.profit
 
 

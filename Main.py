@@ -88,10 +88,18 @@ def parse_args():
     ### - Misc. Args - ###
     parser.add_argument("-reward", "--reward", dest="reward", metavar="reward", default = 'base',
                         type=str, help="Reward input. See Doc File for reward function names, explainations, etc.")
+
+    parser.add_argument("-verbose", "--verbose", dest="verbose", metavar="verbose", default = False,
+                        type=bool, help="Print Env info")
     
     args = parser.parse_args()
 
     return args
+
+def _valid_df(data, key):
+        if data[key] is None:
+            return False
+        return True
 
 if __name__ == '__main__':
     print('Begin Training')
@@ -99,41 +107,51 @@ if __name__ == '__main__':
 
     args = parse_args()
 
-    """### - Load Data - ###
+    ### - Load Data - ###
     data = load_dataset(general_params['path'])
     keys = list(data.keys())
+    for x in general_params['drop_tickers']:
+        keys.remove(x)
+    for i, x in enumerate(keys):
+        if not _valid_df(data, x):
+            keys.pop(i)
+    epochs = args.e
 
     if args.debug:
         keys = keys[:general_params['debug_len']] #Debug flag application
+        epochs = 1
+
+    print('Num Stocks: %d' % len(keys))
 
     ### - Create Models - ###
-    print('Create AE Model')
-    #TODO: Maybe try and get the base RL class working first. Then add and tweak the AE
-
-    print('Create Trader')
-    #TODO: Make sure with new training structure that this input shape will work over all key lists
-
-    print('Create Env')
-    reward = get_rew(args.reward) #get reward function
-    assert(callable(reward))
-    """
-    ### - Basic inits for the project - ###
-    data = load_dataset('C:\Code\RLLI-Paper\dataset_long_ind.pickle')
-    keys = list(data.keys())[0:10] #Useful in the experiments tab to keep everything a little smaller
-
     env_args = { #Environments args to be passed to each agent
         'df': data,
         'window_size': 1,
         'key': keys,
+        'rew_fn': args.reward,
     }
 
-    bots = MADDPG(134, len(keys) * 134, keys, 2, env_args) #init bots
+    bots = MADDPG(134, len(keys) * 134, keys, 2, env_args, args.verbose) #init bots
 
-    mem = MultiAgentReplayBuffer(1000000, len(keys) * 134, 134, 2, len(keys), 1)
+    mem = MultiAgentReplayBuffer(1000, len(keys) * 134, 134, 2, len(keys), 1)
 
+    total_steps = 0
+    total_score = 0
 
-    score, total_steps, episode_steps, infos, _dones = bots.step(mem, 0, 0)
+    for i in range(epochs): #Start of main loop
+        bots.reset_environments() #Basic loggers and trackers
+        score = 0
+        dones = [False]*bots.n_agents
+        episode_steps = 0
 
+        while not any(dones):
+            score, total_steps, episode_steps, infos, _dones = bots.step(mem, total_steps, episode_steps, score) #Run Envs
+            total_score+= score
+            dones = _dones
+            if episode_steps % 100 ==0:
+                print('Epoch %d, Episode_Score: %.2f, Total Score: %.2f, Current Iters: %d, Episode Iters: %d' % (i, score, total_score, total_steps, episode_steps)) #Logging
+        if i % 100 == 0:
+            bots.get_renders(i)
     ### - Begin Loops - ###
 
     ### - Evaluation - ###

@@ -11,6 +11,8 @@ trade_params = {
 }
 
 general_params = {
-    'path': 'dataset_long_ohlc.pickle',
+    'path': 'C:\Code\RLLI-Paper\dataset_long_ind.pickle',
     'debug_len': 10,
+    'render_save': 'C:/Code/RLLI-Paper/Renders/',
+    'drop_tickers': ['CEG']
 }

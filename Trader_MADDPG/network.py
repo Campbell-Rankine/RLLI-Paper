@@ -143,7 +143,7 @@ class Critic(nn.Module):
 
 ### - Individual Agents - ###
 class Agent(nn.Module):
-    def __init__(self, env: TradingEnv, actor_dims, critic_dims, n_actions, n_agents, stock, dir='/Users/bigc/RLLI-Paper/checkpoint/',
+    def __init__(self, env: TradingEnv, actor_dims, critic_dims, n_actions, n_agents, stock, verbose, dir='/Users/bigc/RLLI-Paper/checkpoint/',
                     alpha=0.01, beta=0.01, fc1=64, 
                     fc2=64, gamma=0.95, tau=0.01):
         """
@@ -170,12 +170,13 @@ class Agent(nn.Module):
         super(Agent, self).__init__()
 
         ### - Copy Attributes - ###
+        self.verbose = verbose
         self.gamma = gamma
         self.tau = tau
         self.n_actions = int(n_actions)
         self.name = 'agent_' + stock
         self.env = env
-        self.obs = self.env.display_config()
+        self.obs = self.env.display_config(self.verbose)
         self.timestep = self.env._current_tick
         self.n_agents = n_agents
         self.actor_loss = None

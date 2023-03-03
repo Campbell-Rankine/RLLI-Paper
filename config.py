@@ -12,7 +12,7 @@ trade_params = {
 
 general_params = {
     'path': 'C:\Code\RLLI-Paper\dataset_long_ind.pickle',
-    'debug_len': 10,
+    'debug_len': 50,
     'render_save': 'C:/Code/RLLI-Paper/Renders/',
     'drop_tickers': ['CEG']
 }

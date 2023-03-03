@@ -15,7 +15,7 @@ class TradingEnv(gym.Env):
 
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, df, window_size, key, rew_fn='base', starting_funds=10000, in_house=0.2, owned=0):
+    def __init__(self, df, window_size, key, rew_fn='base', starting_funds=10000, in_house=.2, owned=0):
 
 
         self.r_fn = get_rew(rew_fn)
@@ -44,6 +44,7 @@ class TradingEnv(gym.Env):
         self.available_funds = (starting_funds) - (self.in_house * starting_funds) #Available funds to spend
 
         self.profit = 0.
+        self.profit_0 = (self.prices[0]*owned) + self.available_funds
         self.reward = 0.
 
         # episode
@@ -79,6 +80,7 @@ class TradingEnv(gym.Env):
         self.profit = 0.
         self.reward = 0.
         self.available_funds = (self.starting_funds) - (self.in_house * self.starting_funds)
+        self.profit_0 = (self.prices[0]*self.num_owned_0) + self.available_funds
         return self._get_observation()
 
 
@@ -232,7 +234,9 @@ class TradingEnv(gym.Env):
             self.available_funds -= self.prices[self._current_tick]
         if self._current_tick == self._start_tick:
             self.profit = 1
-        self.profit = ((self.num_owned * self.prices[self._current_tick]) + self.available_funds) - self.profit
+        self.profit = ((self.num_owned * self.prices[self._current_tick]) + self.available_funds) - self.profit_0
+        if self._current_tick % 100 == 0:
+            self.profit_0 = (self.num_owned*self.prices[self._current_tick]) + self.available_funds
         self._total_profit += self.profit
 
 

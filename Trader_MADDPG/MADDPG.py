@@ -90,14 +90,7 @@ class MADDPG:
 
         total_steps += 1
         episode_steps += 1
-
-        if total_steps % 50 == 0:
-            m_owned = sum([x.env.num_owned for x in self.agents]) / self.n_agents
-            m_profit = sum([x.env.profit for x in self.agents]) / self.n_agents
-            m_avail = sum([x.env.available_funds for x in self.agents]) / len(self.agents)
-            print('Mean Number of Stocks Owned: %.2f, Mean Profit: %.2f, Mean Available Funds %.2f' % (m_owned, m_profit, m_avail))
-
-
+        
         return score, total_steps, episode_steps, infos, _dones
 
     def choose_action(self, raw_obs):

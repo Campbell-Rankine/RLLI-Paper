@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import collections
 import ray
+import random
 
 from Trader_MADDPG.buffer import *
 from Trader_MADDPG.MADDPG import *
@@ -117,9 +118,13 @@ if __name__ == '__main__':
             keys.pop(i)
     epochs = args.e
 
+    ### - Set Debug - ###
     if args.debug:
-        keys = keys[:general_params['debug_len']] #Debug flag application
-        epochs = 100
+        print(0., len(keys), general_params['debug_len'])
+        inds = np.random.uniform(0., len(keys), general_params['debug_len'])
+        inds = [int(x) for x in inds]
+        keys = [keys[ind] for ind in inds] #Debug flag application
+        epochs = 500
 
     print('Num Stocks: %d' % len(keys))
 
@@ -130,30 +135,34 @@ if __name__ == '__main__':
         'key': keys,
         'rew_fn': args.reward,
     }
-
     bots = MADDPG(134, len(keys) * 134, keys, 2, env_args, args.verbose) #init bots
-
     mem = MultiAgentReplayBuffer(100000, len(keys) * 134, 134, 2, len(keys), 1)
 
-    total_steps = 0
+    ### - START TRAIN LOOP - ###
+    total_steps = 0 #Logging vars
     total_score = 0
+    databar = tqdm(range(epochs+1))
 
-    for i in range(epochs+1): #Start of main loop
+    for i in databar: #Start of main loop
+        ### - Epoch Setup - ###
         bots.reset_environments() #Basic loggers and trackers
         score = 0
         dones = [False]*bots.n_agents
         episode_steps = 0
 
         while not any(dones):
+            ### - Episode Steps - ###
             score, total_steps, episode_steps, infos, _dones = bots.step(mem, total_steps, episode_steps, score) #Run Envs
             total_score+= score
             dones = _dones
             if episode_steps % 100 ==0:
-                print('Epoch %d, Episode_Score: %.2f, Total Score: %.2f, Current Iters: %d, Episode Iters: %d' % (i, score, total_score, total_steps, episode_steps)) #Logging
-        if i % 100 == 0:
+                databar.set_description('Epoch %d, Episode_Score: %.2f, Total Score: %.2f, Current Iters: %d, Episode Iters: %d, Mean Owned: %.2f. Mean Profit: %.2f, Mean Funds: %.2f' % 
+                (i, score, total_score, total_steps, episode_steps, sum([x.env.num_owned for x in bots.agents]) / bots.n_agents, sum([x.env.profit for x in bots.agents]) / bots.n_agents, 
+                sum([x.env.available_funds for x in bots.agents]) / len(bots.agents))) #Logging
+        if i % 50 == 0:
             bots.get_renders(i)
-    ### - Begin Loops - ###
-
+    ### - Model Save - ###
+    bots.save_checkpoint()
     ### - Evaluation - ###
 
 

@@ -6,11 +6,12 @@ import torch.optim as optim
 import numpy as np
 from Trader_MADDPG.utils import *
 from Env import *
+from config import *
 
 ### - Note we will have 1 agent per stock. Stock environments require a continuous output - ###
 
 class Actor(nn.Module):
-    def __init__(self, alpha, in_size, fc1, fc2, n_actions, name, dir='/Users/bigc/RLLI-Paper/checkpoint/'):
+    def __init__(self, alpha, in_size, fc1, fc2, n_actions, name, dir='C:\Code\RLLI-Paper\checkpoint'):
         """
         Actor Class:
 
@@ -71,7 +72,7 @@ class Actor(nn.Module):
         self.load_state_dict(T.load(self.cp_))
 
 class Critic(nn.Module):
-    def __init__(self, beta, in_size, fc1, fc2, n_actions, n_agents, name, dir='/Users/bigc/RLLI-Paper/checkpoint/'):
+    def __init__(self, beta, in_size, fc1, fc2, n_actions, n_agents, name, dir='C:\Code\RLLI-Paper\checkpoint'):
         """
         Critic Class:
 
@@ -143,7 +144,7 @@ class Critic(nn.Module):
 
 ### - Individual Agents - ###
 class Agent(nn.Module):
-    def __init__(self, env: TradingEnv, actor_dims, critic_dims, n_actions, n_agents, stock, verbose, dir='/Users/bigc/RLLI-Paper/checkpoint/',
+    def __init__(self, env: TradingEnv, actor_dims, critic_dims, n_actions, n_agents, stock, verbose, dir='C:\Code\RLLI-Paper\checkpoint',
                     alpha=0.01, beta=0.01, fc1=64, 
                     fc2=64, gamma=0.95, tau=0.01):
         """
@@ -181,6 +182,7 @@ class Agent(nn.Module):
         self.n_agents = n_agents
         self.actor_loss = None
         self.critic_loss = None
+        self.stock = stock
 
         ### - Create Networks - ###
         self.noise = OUActionNoise(mu=np.zeros(self.n_actions))
@@ -206,8 +208,11 @@ class Agent(nn.Module):
         actions = self.actor.forward(state)
         actions = actions.detach().cpu().numpy() + self.noise()
         actions = actions[0][0]
-        if actions[0] > actions[1]:
-            return 1
+        max_a = np.argmax(actions)
+        if max_a == 0:
+            return 1*(general_params['max_action'] * actions[0])
+        if max_a == 1:
+            return -1*(general_params['max_action'] * actions[0])
         return 0
         
 

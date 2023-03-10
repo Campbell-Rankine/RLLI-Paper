@@ -200,7 +200,7 @@ class TradingEnv(gym.Env):
 
     def _calculate_reward(self, action):
         #Depends on how we're going to output from the individual DDPG models.
-        return self.r_fn(action, self.num_owned, self.prices, self._current_tick, self.available_funds)
+        return self.r_fn(action, self.num_owned, self.prices, self._current_tick, self.available_funds, self.profit_0)
 
     def display_config(self, verbose, obs=None):
         """
@@ -226,7 +226,9 @@ class TradingEnv(gym.Env):
         return obs
 
     def _update_profit(self, action):
-        if action == 0 and not self.num_owned <= 0:
+        if action == 0:
+            return None
+        if action == -1 and not self.num_owned <= 0:
             self.num_owned -= 1
             self.available_funds += self.prices[self._current_tick]
         elif self.available_funds - self.prices[self._current_tick] >= 0:

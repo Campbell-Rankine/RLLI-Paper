@@ -12,6 +12,7 @@ class MADDPG:
         Actual Class containing all agents. See network file for information on params
         """
         ### - Copy Attributes - ###
+        self.stock_keys = stock_keys
         self.verbose = verbose
         self.actor_dims = actor_dims
         self.critic_dims = critic_dims
@@ -147,7 +148,7 @@ class MADDPG:
             agent.actor.optimizer.zero_grad()
 
             agent.critic_loss.backward(retain_graph=True)
-            agent.actor_loss = -agent.critic.forward(states, mu).flatten().mean()
+            agent.actor_loss = agent.critic.forward(states, mu).flatten().mean()
             agent.actor_loss.backward(retain_graph=True)
             
             agent.critic.optimizer.step()
@@ -158,18 +159,20 @@ class MADDPG:
     def update_environments(self):
         raise NotImplementedError
 
-    def get_renders(self, iteration):
+    def get_renders(self, iteration, tickers):
         print('Rendering Decision History')
         for x in self.agents:
-            fpath = general_params['render_save'] + x.name + '_' + str(iteration) + '.png'
-            x.env.render_all()
-            x.env.save_rendering(fpath)
-            plt.clf()
+            if x.stock in tickers:
+                fpath = general_params['render_save'] + x.name + '_' + str(iteration) + '.png'
+                x.env.render_all()
+                x.env.save_rendering(fpath)
+        plt.clf()
 
     def _get_collab_reward(self):
         raise NotImplementedError
 
-    def reset_environments(self):
+    def reset_environments(self, mem):
+        mem.reset()
         self.obs_p = []
         for x in self.agents:
             x.reset()

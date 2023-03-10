@@ -10,6 +10,7 @@ class MultiAgentReplayBuffer:
         self.actor_dims = actor_dims
         self.batch_size = batch_size
         self.n_actions = n_actions
+        self.critic_dims = critic_dims
 
         self.state_memory = np.zeros((self.mem_size, critic_dims))
         self.new_state_memory = np.zeros((self.mem_size, critic_dims))
@@ -82,3 +83,12 @@ class MultiAgentReplayBuffer:
     def ready(self):
         if self.mem_cntr >= self.batch_size:
             return True
+
+    def reset(self):
+        self.mem_cntr = 0
+        self.state_memory = np.zeros((self.mem_size, self.critic_dims))
+        self.new_state_memory = np.zeros((self.mem_size, self.critic_dims))
+        self.reward_memory = np.zeros((self.mem_size, self.n_agents))
+        self.terminal_memory = np.zeros((self.mem_size, self.n_agents), dtype=bool)
+
+        self.init_actor_memory()

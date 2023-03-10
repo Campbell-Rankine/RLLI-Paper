@@ -26,21 +26,20 @@ class Encoder(nn.Module):
 
     def __init__(self, batch_size, window_size, latent, dims):
         super(Encoder, self).__init__()
-        self.features = dims[1]
-        self.dataframes = dims[0]
+        self.features = dims
 
         self.dims = dims
 
         ### - Define VGG-16 Encoder Step - ###
         self.input_transform = input_transform(1, 3)
         self.encoder = models.vgg16(pretrained=False)
+        print(self.encoder)
 
         ### - 512 Dimensional output representation vector - ###
         del self.encoder.classifier
         
         self.encoder.features[28].out_channels = 512
         self.encoder.features[30].kernel_size=4
-        print(self.encoder)
         self.avgpool = nn.AdaptiveAvgPool2d(output_size=1)
         #self.encoder.Lin = nn.Linear(1024,128)
 
@@ -167,7 +166,7 @@ class Decoder(nn.Module):
         self.decoder = invert_encoder(encoder.encoder)
         self.in_channels = encoder.out_channels
         self.out_channels = encoder.in_channels
-        self.convert = output_transform(3, 1, (30,834))
+        self.convert = output_transform(3, 1, (1,135))
         self.activation = nn.Sigmoid()
 
     def forward(self, x, pool_indices):
@@ -182,7 +181,7 @@ class Decoder(nn.Module):
                 k_pool += 1
             else:
                 x_current = module_decode(x_current)
-        x_current = self.activation(self.convert(x_current).squeeze(1))
+        x_current = self.convert(self.activation(x_current))
         return x_current
     
 
@@ -205,7 +204,7 @@ class VGG16_AE(nn.Module):
     def forward(self, x):
         encoded, pool_indices = self.encoder(x)
         decoded = self.decoder(encoded, pool_indices)
-        return decoded
+        return decoded, encoded.shape
 
     def load_model(self, path, device, optim_args):
         print('... loading checkpoint ...')

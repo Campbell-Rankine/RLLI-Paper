@@ -83,3 +83,51 @@ class output_transform(nn.Module):
         
     def forward(self, x):
         return F.interpolate(self.cvt_r(x), self.dim)
+
+from Train import load_dataset
+from torch.utils.data import Dataset, DataLoader
+class StockData(Dataset):
+    """
+    Access and load our created and downloaded dataset.
+    Args:
+        1) File Address -> Location to pull dataset from
+        2) Window Size -> How far back we allow the model to see
+        3) Device -> Torch device for calculation
+        3) Spacing (default=0) -> time between last observation and prediction (if 0 we predict the next day, 7, the next week, etc.)
+        4) Transform (default=None) -> list of transforms to data
+    """
+    def __init__(self, file_address, window_size, device, spacing=0, transform=None):
+        super(StockData, self).__init__()
+
+        ### - Training Window Bounds - ###
+        self.window = window_size
+        self.spacing = spacing
+
+        ### - Get total Dataset - ###
+        self.data = load_dataset(file=file_address)
+        self.keys = list(self.data.keys())
+        self.data_ = np.array(self.data[self.keys[0]]) #create temp dataset
+        for x in self.keys[1:]:
+            try:
+                self.data_ = np.vstack([self.data_, self.data[x]]) #Vertical stacking of data, no distinguishing between stocks as for the autoencoder it doesnt matter
+            except ValueError:
+                print('Remove Key: %s' % x)
+        assert(self.data[self.keys[0]].shape[1] == self.data_.shape[1])
+        self.data = T.tensor(self.data_, dtype=T.float)
+
+        ### - Attributes - ###
+        self.dir = file_address
+        self.transform = transform
+        self.device = device
+
+    def __len__(self):
+        return len(self.data) - self.window
+
+    def features(self):
+        return self.data.shape[1]
+
+    def __getitem__(self, index):
+        ### - Get Pandas df - ###
+        if index < self.data.shape[0] + self.window:
+            obs = self.data[index:index+self.window]
+            return obs

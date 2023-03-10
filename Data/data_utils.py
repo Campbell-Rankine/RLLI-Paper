@@ -276,7 +276,7 @@ class StockData(Dataset):
         self.device = device
     
     def prep_data(self):
-        data_ = [self.data[key].drop('ticker', axis=1) for key in self.keys]
+        data_ = [self.data[key] for key in self.keys]
         self.data = np.array(data_[0])
         shape = self.data.shape
         for x in data_[1:]:

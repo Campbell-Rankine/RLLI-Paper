@@ -2,7 +2,12 @@
 import numpy as np
 
 ae_params = {
-    
+    'lr': 0.1,
+    'epochs': 64,
+    'loss': 'BCE',
+    'batch': 1,
+    'window': 1,
+    'latent': 64,
 }
 
 trade_params = {
@@ -14,5 +19,7 @@ general_params = {
     'path': 'C:\Code\RLLI-Paper\dataset_long_ind.pickle',
     'debug_len': 50,
     'render_save': 'C:/Code/RLLI-Paper/Renders/',
-    'drop_tickers': ['CEG']
+    'drop_tickers': ['CEG'],
+    'num_act': 3,
+    'max_action': 5
 }

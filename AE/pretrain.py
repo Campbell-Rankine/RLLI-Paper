@@ -43,12 +43,12 @@ def static_train(args, epochs, device, test=0.1):
     transform = transforms.Compose([transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
     dataset = StockData(dataset_p, ae_params['window'], device, transform=transform)
-    dataloader = DataLoader(dataset, batch_size=1, shuffle=True, num_workers=2)
+    dataloader = DataLoader(dataset, batch_size=3, shuffle=True, num_workers=2)
 
     num_features = dataset.data.shape[1]
     
     ### - Model Definition - ###
-    encoder_args = {'batch_size': ae_params['batch'], 'window_size': ae_params['window'], 'latent': ae_params['latent'],
+    encoder_args = {'batch_size': ae_params['window'], 'window_size': ae_params['window'], 'latent': ae_params['latent'],
                     'dims': num_features}
     decoder_args = {}
 
@@ -64,7 +64,7 @@ def static_train(args, epochs, device, test=0.1):
     g_pen = 0.
     penalty = 0.
     testing = []
-    for epoch in databar[:ae_params['window']]:
+    for epoch in databar:
         
         ### - Databar Init - ###
         losses = []
@@ -84,8 +84,7 @@ def static_train(args, epochs, device, test=0.1):
             x = x.to(device)
             #model.zero_grad()
             optim.zero_grad()
-            out, encoded_dims = model(x.detach())
-            print(out.shape, x.shape)
+            out, encoded_dims = model(x)
             loss_ = loss(out, x)
             try:
                 model.eval()
@@ -101,7 +100,7 @@ def static_train(args, epochs, device, test=0.1):
             
             databar.set_description('Epoch: %i, Loss: %0.2f, Running Loss: %.2f, Grad Penalty: %e, Sample #: %i, Encoded Dims: %i' % 
                                     (epoch, loss_.item(), running_loss, p, i, encoded_dims[1]))
-            nn.utils.clip_grad_value_(model.parameters(), clip_value=10.0)
+            #nn.utils.clip_grad_value_(model.parameters(), clip_value=10.0)
             optim.step()
             scheduler.step()
         epoch_losses.append(np.mean(losses))

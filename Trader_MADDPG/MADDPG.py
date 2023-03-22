@@ -166,13 +166,14 @@ class MADDPG:
                 fpath = general_params['render_save'] + x.name + '_' + str(iteration) + '.png'
                 x.env.render_all()
                 x.env.save_rendering(fpath)
-        plt.clf()
+            plt.clf()
 
     def _get_collab_reward(self):
         raise NotImplementedError
 
-    def reset_environments(self, mem):
-        mem.reset()
+    def reset_environments(self, epoch, mem):
+        if epoch % 20 == 0:
+            mem.reset()
         self.obs_p = []
         for x in self.agents:
             x.reset()

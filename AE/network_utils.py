@@ -65,10 +65,11 @@ class input_transform(nn.Module):
     """
     def __init__(self, in_c, out_c):
         super().__init__()
-        self.cvt = EqualizedLR_Conv2d(in_c, out_c, (1,1), stride=(1,1))
+        self.cvt = EqualizedLR_Conv2d(out_c, in_c, (1,1), stride=(1,1))
         
     def forward(self, x):
-        return F.interpolate(self.cvt(x), (64,64))
+        out = self.cvt(x)
+        return out
 
 class output_transform(nn.Module):
     """
@@ -128,6 +129,8 @@ class StockData(Dataset):
 
     def __getitem__(self, index):
         ### - Get Pandas df - ###
-        if index < self.data.shape[0] + self.window:
-            obs = self.data[index:index+self.window]
-            return obs
+        obs = self.data[index:min(index+self.window, self.data.shape[0])]
+        additional = (index + self.window) - self.data.shape[0]
+        if additional > 0:
+            obs = T.cat([obs, self.data[:additional]], axis=1)
+        return obs

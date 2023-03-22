@@ -1,80 +1,37 @@
 ### - Any Custom Built Reward Functions Go Here - ###
 from utils import *
 
-def reward_1(action, owned, prices, tick, avail, worth_0):
+def reward_1(action, owned, prices, tick, avail, worth_0, discount=0.9):
     """
-    Reward function defined as: The profit obtained by taking this action, over the opposite action. 
-    (profit_this - profit_opposite). Normalized by the max profit.
-
-    Args:
-        action:             (float) - Action output from the network
-        owned:              (int) - Number of this stock currently owned
-        prices:             (numpy.NDArray - (float)) - Array of prices for all timesteps
-        tick:               (int) - current timestep
-        avail:              (float) - Available funds for calculating profit/net worth
+    Normalized 'worth' of current owned at the next timestep
     """
     diff = 0.
     opp = 0.
     if action == 1: 
         diff = 1
-        opp = -1
     elif action == -1:
         diff = -1
-        opp = 1
     else:
-        a_prof = (((owned) * prices[tick]) + (avail + prices[tick]))
-        o_prof = np.mean((((owned + -1) * prices[tick]) + (avail + -1*prices[tick])), (((owned + 1) * prices[tick]) + (avail + 1*prices[tick])))
-        max_p = np.max([a_prof, o_prof])
-        return (((a_prof - o_prof) / abs(max_p))) - 1
+        return (owned*prices[tick+1]) / np.max(prices)
 
-    a_prof = (((owned + diff) * prices[tick]) + (avail + diff*prices[tick])) - worth_0
-    o_prof = (((owned + opp) * prices[tick]) + (avail + opp*prices[tick])) - worth_0
+    curr_own = owned + diff
+    return (curr_own + prices[tick+1]) / np.max(prices)
 
-    max_p = np.max([a_prof, o_prof])
-    if max_p == 0.:
-        return 0.
-    if a_prof == 0 and o_prof == 0:
-        return 0.
-    return -(((a_prof - o_prof) / abs(max_p))) - 1
-
-def reward_2(action, owned, prices, tick, avail, worth_0):
+def reward_2(action, owned, prices, tick, avail, discount=0.9):
     """
-    Reward function defined as: The profit obtained by taking this action, over the opposite action. 
-    (profit_this - profit_opposite). Normalized by the max profit.
-
-    Args:
-        action:             (float) - Action output from the network
-        owned:              (int) - Number of this stock currently owned
-        prices:             (numpy.NDArray - (float)) - Array of prices for all timesteps
-        tick:               (int) - current timestep
-        avail:              (float) - Available funds for calculating profit/net worth
+    Normalized 'worth' averaged over discounted timesteps
     """
     diff = 0.
     opp = 0.
     if action == 1: 
         diff = 1
-        opp = -1
     elif action == -1:
         diff = -1
-        opp = 1
     else:
-        a_prof = (((owned) * prices[tick]) + (avail + prices[tick])) - worth_0
-        O_1 = (((owned + -1) * prices[tick]) + (avail + -1*prices[tick])) - worth_0
-        O_2 = (((owned + 1) * prices[tick]) + (avail + 1*prices[tick])) - worth_0
-        o_prof = np.mean([O_1, O_2])
-        max_p = np.max([a_prof, o_prof])
-        return (((a_prof - o_prof) / abs(max_p))) - 1
-
-    ### - Profit - ###
-    a_prof = (((owned + diff) * prices[tick]) + (avail + diff*prices[tick])) - worth_0
-    o_prof = (((owned + opp) * prices[tick]) + (avail + opp*prices[tick])) - worth_0
-
-    max_p = np.max([a_prof, o_prof])
-    if max_p == 0.:
-        return 0.
-    if a_prof == 0 and o_prof == 0:
-        return 0.
-    return (((a_prof - o_prof) / abs(max_p))) - 1
+        return (owned*prices[tick+1]) / np.max(prices)
+    curr_own = owned + diff
+    rew = np.mean([discount**(i)*x for i, x in enumerate(prices)])
+    return (curr_own + prices[tick+1]) / np.max(prices)
 
 def reward_3(action, owned, prices, tick, avail):
     """

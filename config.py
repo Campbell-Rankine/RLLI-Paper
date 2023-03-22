@@ -6,7 +6,7 @@ ae_params = {
     'epochs': 64,
     'loss': 'BCE',
     'batch': 1,
-    'window': 1,
+    'window': 64,
     'latent': 64,
 }
 

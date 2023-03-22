@@ -40,13 +40,17 @@ Using the VGG-16 model we change the final output classification to a vector of 
 ---
 Name: Base 
 
-Definitions: Rew_{base} = (Profit made by taking action - profit made by taking opposite action) / Max(Action_p, Opposite_p)
+Definitions: Normalized Net Worth at the next timestep.
 
-Goal: Maximize correct action choices and profit over each timestep.
+Basis: Following Markov Decision Process fundamentals and definitions we reward the model for the normalized net worth at timestep T+1
 
-Name: Simple
-Definition: Sum(Agent profit)
-Goal: Maximize profit
+---
+
+Name: Base Profit
+
+Definitions: Mean discounted net worth across all future timesteps
+
+Basis: Similar logic of following the MDP definitions however now we add long/short term discounting
 
 ## MADDPG:
 ---

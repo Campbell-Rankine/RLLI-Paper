@@ -134,7 +134,7 @@ def base_train(args):
 
     for i in databar: #Start of main loop
         ### - Epoch Setup - ###
-        bots.reset_environments(mem) #Basic loggers and trackers
+        bots.reset_environments(i, mem) #Basic loggers and trackers
         score = 0
         dones = [False]*bots.n_agents
         episode_steps = 0
@@ -145,9 +145,10 @@ def base_train(args):
             total_score+= score
             dones = _dones
             if episode_steps % 100 ==0:
-                databar.set_description('Epoch %d, Episode_Score: %.2f, Total Score: %.2f, Current Iters: %d, Episode Iters: %d, Mean Owned: %.2f. Mean Profit: %.2f, Mean Funds: %.2f, Sum Profit: %.2f' % 
+                databar.set_description('Epoch %d, Current Iters: %d, Episode Iters: %d, Mean Owned: %.2f. Mean Profit: %.2f, Mean Funds: %.2f, Sum Profit: %.2f' % 
                 (i, score, total_score, total_steps, episode_steps, sum([x.env.num_owned for x in bots.agents]) / bots.n_agents, sum([x.env.profit for x in bots.agents]) / bots.n_agents, 
                 sum([x.env.available_funds for x in bots.agents]) / len(bots.agents), sum([x.env.profit for x in bots.agents]) )) #Logging
+
         if i % 50 == 0:
             bots.get_renders(i, key_)
     ### - Model Save - ###

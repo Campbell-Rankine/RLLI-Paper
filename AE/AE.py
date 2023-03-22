@@ -7,6 +7,7 @@ import torchvision.models as models
 import ray
 from tqdm import tqdm
 from AE.network_utils import *
+from config import *
 
 class Encoder(nn.Module):
 
@@ -31,14 +32,17 @@ class Encoder(nn.Module):
         self.dims = dims
 
         ### - Define VGG-16 Encoder Step - ###
-        self.input_transform = input_transform(1, 3)
+        #self.input_transform = input_transform(3, 1)
         self.encoder = models.vgg16(pretrained=False)
         print(self.encoder)
 
         ### - 512 Dimensional output representation vector - ###
         del self.encoder.classifier
-        
-        self.encoder.features[28].out_channels = 512
+        out_chan = 135
+        for i in range(0,28):
+            self.encoder.features[i].out_channels = out_chan
+            out_chan = out_chan - (int(135/ae_params['latent']))
+        self.encoder.features[28].out_channels = ae_params['latent']
         self.encoder.features[30].kernel_size=4
         self.avgpool = nn.AdaptiveAvgPool2d(output_size=1)
         #self.encoder.Lin = nn.Linear(1024,128)
@@ -62,7 +66,7 @@ class Encoder(nn.Module):
     
     def get_activations(self, x):
         pool_indices = []
-        x_current = self.input_transform(x)
+        x_current = x
         for module_encode in self.encoder:
             #x_current = T.tensor(x_current, dtype=float)
             output = module_encode(x_current)
@@ -73,7 +77,7 @@ class Encoder(nn.Module):
                 pool_indices.append(output[1])
             else:
                 x_current = output
-        activation = self.activation(x_current)
+        activation = x_current#self.activation(x_current)
         return activation
     
     def forward(self, x):
@@ -81,7 +85,7 @@ class Encoder(nn.Module):
         Run forward pass of representation vector through the VGG wrapper
         """
         pool_indices = []
-        x_current = self.input_transform(x)
+        x_current = x
         transform_x = x_current
         for module_encode in self.encoder:
             #x_current = T.tensor(x_current, dtype=float)
@@ -166,15 +170,15 @@ class Decoder(nn.Module):
         self.decoder = invert_encoder(encoder.encoder)
         self.in_channels = encoder.out_channels
         self.out_channels = encoder.in_channels
-        self.convert = output_transform(3, 1, (1,135))
+        self.convert = output_transform(3, 64, (1,135))
         self.activation = nn.Sigmoid()
 
     def forward(self, x, pool_indices):
         x_current = x
         k_pool = 0
         reversed_pool_indices = list(reversed(pool_indices))
-        for module_decode in self.decoder:
-
+        for i, module_decode in enumerate(self.decoder):
+            print('at: %i'%i)
             # If the module is unpooling, collect the appropriate pooling indices
             if isinstance(module_decode, nn.MaxUnpool2d):
                 x_current = module_decode(x_current, indices=reversed_pool_indices[k_pool])

@@ -2,12 +2,20 @@
 import numpy as np
 
 ae_params = {
-    'lr': 0.1,
+    'lr': 3e-4,
+    'beta': 0.25,
+    'num_updates': 5000,
+    'num_hiddens': 128,
+    'num_residual_hiddens': 48,
+    'num_residual_layers': 3,
+    'log_interval': 50,
     'epochs': 64,
-    'loss': 'BCE',
     'batch': 1,
-    'window': 64,
+    'window': 30,
     'latent': 64,
+    'num embeddings': 512,
+    'save path': 'C:/Code/RLLI-Paper/',
+    'additional transforms': [],
 }
 
 trade_params = {

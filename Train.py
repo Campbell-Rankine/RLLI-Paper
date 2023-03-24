@@ -8,7 +8,7 @@ from Data.data_utils import *
 from Trader_MADDPG.MADDPG import *
 from Trader_MADDPG.buffer import *
 
-def parse_args():
+def parse_args_main():
     import json
 
     parser = argparse.ArgumentParser()
@@ -27,19 +27,8 @@ def parse_args():
     ### - AE Args - ###
     parser.add_argument("-aelr", "--aelr", dest="aelr", metavar="aelr", default = 0.1,
                         type=float, help="Auto Encoder Learning Rate")
-                        
-    parser.add_argument("-loss", "--loss", dest="loss", metavar="loss", default = 'BCE',
-                        type=str, help="Loss for reconstruction objective")
-
-    parser.add_argument("-latent", "--latent", dest="latent", metavar="latent", default = 138,
-                        type=int, help="latent size")
-
-    parser.add_argument("-window", "--window", dest="window", metavar="window", default = 30,
-                        type=int, help="default window training size")
-
-    parser.add_argument("-sched", "--sched", dest="sched", metavar="sched", default = False,
-                        type=bool, help="Lr scheduler switch")
-
+    parser.add_argument("-aee", "--aee", dest="aee", metavar="aee", default = 64,
+                        type=int, help="Auto Encoder Epochs")
 
     ### - Trading Args - ###
     parser.add_argument("-h1", "--h1", dest="h1", metavar="h1", default = 300,
@@ -94,28 +83,12 @@ def base_train(args):
     print('Begin Training')
 
     ### - Load Data - ###
-    data = load_dataset(general_params['path'])
-    keys = list(data.keys())
-    for x in general_params['drop_tickers']:
-        keys.remove(x)
-    for i, x in enumerate(keys):
-        if not _valid_df(data, x):
-            keys.pop(i)
+    data, keys = load_dataset(general_params['path'], args.debug)
     epochs = args.e
-
-    ### - Set Debug - ###
     if args.debug:
-        print(0., len(keys), general_params['debug_len'])
-        inds = np.random.uniform(0., len(keys), general_params['debug_len'])
-        inds = [int(x) for x in inds]
-        keys = [keys[ind] for ind in inds] #Debug flag application
         epochs = 500
 
     print('Num Stocks: %d' % len(keys))
-    
-    inds = np.random.uniform(0., len(keys), 10)
-    inds = [int(x) for x in inds]
-    key_ = [keys[x] for x in inds]
 
     ### - Create Models - ###
     env_args = { #Environments args to be passed to each agent
@@ -150,7 +123,7 @@ def base_train(args):
                 sum([x.env.available_funds for x in bots.agents]) / len(bots.agents), sum([x.env.profit for x in bots.agents]) )) #Logging
 
         if i % 50 == 0:
-            bots.get_renders(i, key_)
+            bots.get_renders(i, keys)
     ### - Model Save - ###
     bots.save_checkpoint()
     ### - Evaluation - ###

@@ -19,18 +19,18 @@ from Data.data import *
 from Env import *
 from rewards import *
 from utils import *
-from AE.pretrain import *
+from AE.PreTrain import train_ae
 
 from rewards import *
 from config import *
-from Train import _valid_df, parse_args, base_train, latent_train, process_command_line_arguments
+from Train import _valid_df, parse_args_main, base_train, latent_train, process_command_line_arguments
 
 if __name__ == '__main__':
-    args = parse_args()
+    args = parse_args_main()
     if args.ae:
-        epochs = 200
-        device = T.device("cuda:0" if T.cuda.is_available() else "cpu")
-        static_train(args, epochs, device)
+        ### - Load Data - ###
+        data, keys = load_dataset(general_params['path'], args.debug)
+        train_ae(args, data, keys)
     else:
         base_train(args)
 

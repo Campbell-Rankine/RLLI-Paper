@@ -29,6 +29,10 @@ def parse_args_main():
                         type=float, help="Auto Encoder Learning Rate")
     parser.add_argument("-aee", "--aee", dest="aee", metavar="aee", default = 64,
                         type=int, help="Auto Encoder Epochs")
+    parser.add_argument("-aegc", "--aegc", dest="aegc", metavar="aegc", default = -1,
+                        type=int, help="Gradient Norm Clipping Value")
+    parser.add_argument("-aesv", "--aesv", dest="aesv", metavar="aesv", default = 1,
+                        type=int, help="Gradient Norm Clipping Value")
 
     ### - Trading Args - ###
     parser.add_argument("-h1", "--h1", dest="h1", metavar="h1", default = 300,
@@ -97,6 +101,7 @@ def base_train(args):
         'key': keys,
         'rew_fn': args.reward,
     }
+
     bots = MADDPG(134, len(keys) * 134, keys, general_params['num_act'], env_args, args.verbose) #init bots
     mem = MultiAgentReplayBuffer(100000, len(keys) * 134, 134, general_params['num_act'], len(keys), 1)
 

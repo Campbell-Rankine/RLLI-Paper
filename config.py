@@ -6,15 +6,15 @@ ae_params = {
     'beta': 0.25,
     'num_updates': 5000,
     'num_hiddens': 128,
-    'num_residual_hiddens': 48,
-    'num_residual_layers': 3,
+    'num_residual_hiddens': 32,
+    'num_residual_layers': 2,
     'log_interval': 50,
     'epochs': 64,
     'batch': 1,
     'window': 30,
     'latent': 64,
     'num embeddings': 512,
-    'save path': 'C:/Code/RLLI-Paper/',
+    'save path': 'C:/Code/RLLI-Paper/ae_checkpoints/',
     'additional transforms': [],
 }
 

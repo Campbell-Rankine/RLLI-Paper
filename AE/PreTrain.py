@@ -72,10 +72,10 @@ def train_ae(args, data, keys):
                 optimizer.zero_grad()
 
                 ### - Forward Pass - ###
-                embedding_loss, x_hat, perplexity = vqae(X.float())
-                x_hat = F.interpolate(x_hat, (134))
                 recon_loss = 0
-                try:
+                try: #Try - Except loop is bad practice but it's just an easier way of handling the mismatched data, because this is pretty much how its handled in the env
+                    embedding_loss, x_hat, perplexity = vqae(X.float())
+                    x_hat = F.interpolate(x_hat, (134))
                     recon_loss = torch.mean((x_hat - X)**2) / train_var
                 except RuntimeError:
                     continue
@@ -86,14 +86,15 @@ def train_ae(args, data, keys):
                 epoch_perplexities.append(perplexity.item())
 
                 loss.backward()
+                if args.aegc > 0:
+                    torch.nn.utils.clip_grad_norm(vqae.parameters(), args.aegc)
                 optimizer.step()
 
                 databar.set_description('Epoch: %i, Key: %s, Epoch Loss %.2f, Epoch Recon Error: %.2f, Epoch Perplexity: %.2f' %  (epoch_, key, np.mean(epoch_losses), np.mean(epoch_recon_errors), np.mean(epoch_perplexities)))
         results['recon_errors'].append(np.mean(epoch_recon_errors))
         results['loss_vals'].append(np.mean(epoch_losses))
         results['perplexities'].append(np.mean(epoch_perplexities))
-    
-    ### - Final Updates and Save - ###
-    results['n_updates'] = timesteps[-1] * len(keys) * epochs
-    hyperparameters = ae_params
-    save_model_and_results(vqae, results, hyperparameters, ae_params['save path'])
+        if epoch_ % args.aesv == 0:
+            results['n_updates'] = timesteps[-1] * len(keys) * epochs
+            hyperparameters = ae_params
+            save_model_and_results(vqae, results, hyperparameters, ae_params['save path'])

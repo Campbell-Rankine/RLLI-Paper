@@ -101,8 +101,8 @@ def train_ae(args, data, keys):
             save_model_and_results(vqae, results, hyperparameters, ae_params['save path'])
 
             plt.scatter(timesteps, results['recon_errors'], 'tab:blue')
-            plt.savefig(ae_params['save path'] + 'recon.png')
+            plt.savefig(ae_params['save path'] + + 'recon_' + str(epoch_) + '.png')
             plt.clf()
             plt.scatter(timesteps, results['loss_vals'], 'tab:pink')
-            plt.savefig(ae_params['save path'] + 'loss.png')
+            plt.savefig(ae_params['save path'] + 'loss_' + str(epoch_) + '.png')
             plt.clf()

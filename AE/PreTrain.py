@@ -7,6 +7,7 @@ from torch import optim
 ### - Other Library Imports - ###
 import numpy as np
 import argparse
+import matplotlib.pyplot as plt
 
 ### - Module Imports - ###
 from AE.encoder import Encoder
@@ -98,3 +99,10 @@ def train_ae(args, data, keys):
             results['n_updates'] = timesteps[-1] * len(keys) * epochs
             hyperparameters = ae_params
             save_model_and_results(vqae, results, hyperparameters, ae_params['save path'])
+
+            plt.scatter(timesteps, results['recon_errors'], 'tab:blue')
+            plt.savefig(ae_params['save path'] + 'recon.png')
+            plt.clf()
+            plt.scatter(timesteps, results['loss_vals'], 'tab:pink')
+            plt.savefig(ae_params['save path'] + 'loss.png')
+            plt.clf()

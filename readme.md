@@ -31,7 +31,13 @@ Using the same quantstats package we weight all 138 indicators based on their im
 
 #### Encoded Indicators
 ---
-Using the VGG-16 model we change the final output classification to a vector of size N. Model will attempt to learn it's own indicators by attempting to encode the 'health' of a stock using some window size W.
+Using the VQVAE model we change the final output classification to a vector of size N. Model will attempt to learn it's own indicators by attempting to encode the 'health' of a stock using some window size W.
+
+The network architecture will be included below:
+
+TODO: INSERT IMAGE
+
+The loss function for our windowed auto encoder is the standard combination of reconstruction error and embedding loss. However it is important to note that the loss function has been changed as we are simply pre training an auto encoder so the actual embedding/reconstruction loss is relatively arbitrary at this point. To allow for task specific training we have provided input parameters inside the config file that turn the loss function into a weighted combination of the embedding and reconstruction loss. 0.8 for reconstruction and 0.2 for embedding loss are the default weights however training the model at 0.9 and 0.1 is recommended as it reduces the magnitude of the loss function and yields slightly better training performance. Another good strategy for training is to simply pick one or the other. In the case that one of the losses has a weight of 0,  the calculations for this loss will be skipped to minimize unnecessary computations.
 
 ## Reward Function Names and Definitions
 ---

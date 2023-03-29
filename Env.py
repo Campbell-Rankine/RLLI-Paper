@@ -15,8 +15,7 @@ class TradingEnv(gym.Env):
 
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, df, window_size, key, rew_fn='base', starting_funds=10000, in_house=.2, owned=0):
-
+    def __init__(self, df, window_size, key, rew_fn='base', starting_funds=10000, in_house=.2, owned=0, shap=False):
 
         self.r_fn = get_rew(rew_fn)
         self.seed()
@@ -42,7 +41,9 @@ class TradingEnv(gym.Env):
         self.starting_funds = starting_funds
         self.total_funds = starting_funds
         self.available_funds = (starting_funds) - (self.in_house * starting_funds) #Available funds to spend
+        self.init_episode(owned)
 
+    def init_episode(self, owned):
         self.profit = 0.
         self.profit_0 = (self.prices[0]*owned) + self.available_funds
         self.reward = 0.

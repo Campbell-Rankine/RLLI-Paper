@@ -12,9 +12,10 @@ import numpy as np
 from AE.encoder import Encoder
 from AE.Utils import *
 from AE.decoder import Decoder
+from config import *
 
 class VQVAE(nn.Module):
-    def __init__(self, h_dim, res_h_dim, n_res_layers,
+    def __init__(self, in_dim, h_dim, res_h_dim, n_res_layers,
                  n_embeddings, embedding_dim, beta, save_img_embedding_map=False):
         super(VQVAE, self).__init__()
         # encode image into continuous latent space
@@ -26,8 +27,8 @@ class VQVAE(nn.Module):
             n_embeddings, embedding_dim, beta)
         # decode the discrete latent representation
         self.decoder = Decoder(embedding_dim, h_dim, n_res_layers+1, res_h_dim)
-        self.post_decode = nn.Conv2d(
-            92, 30, kernel_size=2, stride=1, padding = 1)
+        self.post_decode_c = nn.Conv2d(92, 1, kernel_size=2, stride=1, padding=1)
+        self.post_decode_l = nn.Linear(186, in_dim)
 
         if save_img_embedding_map:
             self.img_to_embedding_map = {i: [] for i in range(n_embeddings)}
@@ -41,7 +42,8 @@ class VQVAE(nn.Module):
             z_e.unsqueeze(0))
         x_hat = self.decoder(z_q)
         x_hat = x_hat.squeeze(0).unsqueeze(-1)
-        x_hat = self.post_decode(x_hat).flatten(-2)
+        x_hat = self.post_decode_c(x_hat).flatten()
+        x_hat = self.post_decode_l(x_hat)
 
         if verbose:
             print('original data shape:', x.shape)

@@ -214,7 +214,31 @@ class Agent(nn.Module):
         if max_a == 1:
             return -1*(general_params['max_action'] * actions[0])
         return 0
-        
+    
+    def predict_proba(self):
+        """
+        Predict probabilities wrapper for numpy/sklearn library integration (Not used as part of my personal implementation but included for convenience)
+        """
+        state = T.tensor([self.obs], dtype=T.float)#.to(self.actor.device)
+        actions = self.actor.forward(state)
+        actions = actions.detach().cpu().numpy() + self.noise()
+        actions = actions[0][0]
+        return actions
+    
+    def predict(self):
+        """
+        Predict wrapper for the SHAP class and other numpy integrations
+        """
+        state = T.tensor([self.obs], dtype=T.float)#.to(self.actor.device)
+        actions = self.actor.forward(state)
+        actions = actions.detach().cpu().numpy() + self.noise()
+        actions = actions[0][0]
+        max_a = np.argmax(actions)
+        if max_a == 0:
+            return 1*(general_params['max_action'] * actions[0])
+        if max_a == 1:
+            return -1*(general_params['max_action'] * actions[0])
+        return 0
 
     def update_network_parameters(self, tau=None):
         """

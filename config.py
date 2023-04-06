@@ -26,10 +26,13 @@ trade_params = {
 }
 
 general_params = {
+    'ae_path': 'C:/Code/RLLI-Paper/vqvae_data_Auto_Encoder_',
+    'ae_pt_epoch': str(4),
     'path': 'C:\Code\RLLI-Paper\dataset_long_ind.pickle',
     'debug_len': 50,
     'render_save': 'C:/Code/RLLI-Paper/Renders/',
     'drop_tickers': ['CEG'],
     'num_act': 3,
-    'max_action': 5
+    'max_action': 5,
+    'log dir': 'C:/Code/RLLI-Paper/results/maddpg_logging/'
 }

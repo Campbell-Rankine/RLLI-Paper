@@ -7,7 +7,7 @@ from config import *
 class MADDPG:
     def __init__(self, actor_dims, critic_dims, stock_keys, n_actions, env_args: dict, verbose,
                  scenario='s&p500',  timestep_0=30, alpha=0.01, beta=0.01, fc1=64, 
-                 fc2=64, gamma=0.99, tau=0.01, cp_='/Users/bigc/RLLI-Paper/checkpoint/'):
+                 fc2=64, gamma=0.99, tau=0.01, cp_='/Users/bigc/RLLI-Paper/checkpoint/', latent=False, latent_optimizer=None):
         """
         Actual Class containing all agents. See network file for information on params
         """
@@ -26,11 +26,13 @@ class MADDPG:
         self.cp_ = cp_
         self.timestep_0 = timestep_0
         self.current_t = timestep_0
+        self.latent=latent
         
         ### - Objects - ###
         self.agents = []
         self.obs_p = []
         self.n_agents = len(stock_keys)
+        self.latent_optimizer = latent_optimizer
         
         ### - init the agents list - ###
         for i in range(len(stock_keys)):
@@ -41,9 +43,9 @@ class MADDPG:
             self.obs_p.append(np.zeros(self.actor_dims))
 
     def obs_format(self, obs):
-        state = obs[0]
+        state = obs[0][:,0,0]
         for obs_ in obs[1:]:
-            state = np.hstack([state, obs_])
+            state = np.hstack([state, obs_[:,0,0]])
         return state
 
     def save_checkpoint(self):
@@ -57,7 +59,6 @@ class MADDPG:
             agent.load_models()
 
     def step(self, memory, total_steps, episode_steps, score):
-        #TODO: This is the main function that needs testing
         """
         This functions steps through one training iteration of the main loop and returns the relevant
         info needed inside the main file. Done in here since overall the project structure
@@ -68,7 +69,7 @@ class MADDPG:
         for i, agent in enumerate(self.agents):
             if i in skips: #skip if this stock is done, continue training on other steps
                 continue
-            observation, action, step_reward, _done, info = agent.next_step() #call environment run
+            observation, action, step_reward, _done, info, probs = agent.next_step() #call environment run
             observations.append(observation) #build all observations
             actions.append(action)
             step_rewards.append(step_reward)
@@ -76,11 +77,17 @@ class MADDPG:
             infos.append(info)
         
         ### - Final Processing - ###
+        
         state= self.obs_format(observations)
         state_p = self.obs_format(self.obs_p)
 
         ### - Store - ###
-        memory.store_transition(self.obs_p, state_p, actions, step_rewards, observations, state, _dones)
+        if self.latent:
+            raw = [x[:,0,0] for x in self.obs_p]
+            new = [x[:,0,0] for x in observations]
+            memory.store_transition(raw, state_p, actions, step_rewards, new, state, _dones)
+        else:
+            memory.store_transition(self.obs_p, state_p, actions, step_rewards, observations, state, _dones)
 
         if total_steps % 100 == 0:
             self.learn(memory)
@@ -92,14 +99,16 @@ class MADDPG:
         total_steps += 1
         episode_steps += 1
         
-        return score, total_steps, episode_steps, infos, _dones
+        return score, total_steps, episode_steps, infos, _dones, probs, actions
 
     def choose_action(self, raw_obs):
         actions = []
+        probs = []
         for agent_idx, agent in enumerate(self.agents):
-            action = agent.choose_action(raw_obs[agent_idx])
+            action, prob = agent.choose_action(raw_obs[agent_idx])
             actions.append(action)
-        return actions
+            probs.append(prob)
+        return actions, probs
 
     def learn(self, memory):
         if not memory.ready():
@@ -136,6 +145,9 @@ class MADDPG:
         new_actions = T.cat([acts for acts in all_agents_new_actions], dim=1)
         mu = T.cat([acts.detach().clone() for acts in all_agents_new_mu_actions], dim=1)
         old_actions = T.cat([acts for acts in old_agents_actions],dim=1)
+        encoder_loss = []
+        critic_losses = []
+        actor_losses = []
         for agent_idx, agent in enumerate(self.agents):
             critic_value_ = agent.target_critic.forward(states_, new_actions).flatten()
             critic_value_[dones[:,0]] = 0.0
@@ -148,13 +160,25 @@ class MADDPG:
             agent.actor.optimizer.zero_grad()
 
             agent.critic_loss.backward(retain_graph=True)
+            agent.critic.optimizer.step()
             agent.actor_loss = agent.critic.forward(states, mu).flatten().mean()
             agent.actor_loss.backward(retain_graph=True)
             
-            agent.critic.optimizer.step()
             agent.actor.optimizer.step()
 
             agent.update_network_parameters()
+            with T.no_grad():
+                actor_losses.append(agent.actor_loss.item())
+                critic_losses.append(agent.critic_loss.item())
+        if self.latent and not self.latent_optimizer is None:
+            self.latent_optimizer.zero_grad()
+            encoder_loss = -T.tensor(critic_losses, dtype=T.float, requires_grad=True).mean()
+            encoder_loss.backward()
+            self.latent_optimizer.step()
+            with T.no_grad():
+                self.critic_loss = np.mean(critic_losses) / np.max(critic_losses)
+                self.actor_loss = np.mean(actor_losses)
+                self.encoder_loss = encoder_loss.item()
 
     def update_environments(self):
         raise NotImplementedError

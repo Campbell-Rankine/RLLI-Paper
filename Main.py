@@ -27,12 +27,14 @@ from Train import _valid_df, parse_args_main, base_train, latent_train, process_
 
 if __name__ == '__main__':
     args = parse_args_main()
+    data, keys = load_dataset(general_params['path'], args.debug)
     if args.ae:
         ### - Load Data - ###
-        data, keys = load_dataset(general_params['path'], args.debug)
         train_ae(args, data, keys)
+    elif args.mode == 'latent':
+        latent_train(args, data, keys)
     else:
-        base_train(args)
+        base_train(args, data, keys)
 
 
     

@@ -52,3 +52,13 @@ class VQVAE(nn.Module):
             assert False
 
         return embedding_loss, x_hat, perplexity
+    
+    def encode(self, X, verbose=False):
+        z_e = self.encoder(X)
+        z_e = self.pre_quantization_conv(z_e)
+
+        if verbose:
+            print('original data shape:', x.shape)
+            print('encoded data shape:', z_e.shape)
+            assert False
+        return z_e

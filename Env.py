@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from rewards import *
 from utils import *
+import torch.nn.functional as F
 
 #TODO: Change this class to a dictionary of dataframes, iterating over multiple stocks
 
@@ -15,7 +16,7 @@ class TradingEnv(gym.Env):
 
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, df, window_size, key, rew_fn='base', starting_funds=10000, in_house=.2, owned=0, shap=False):
+    def __init__(self, df, window_size, key, rew_fn='base', starting_funds=10000, in_house=.2, owned=0, shap=False, ae=None):
 
         self.r_fn = get_rew(rew_fn)
         self.seed()
@@ -30,6 +31,8 @@ class TradingEnv(gym.Env):
         ### - Starting with some stock already in the inventory? - ###
         self.num_owned_0 = owned
         self.num_owned = owned
+
+        self.ae = ae
 
         # spaces
         self.action_space = spaces.Discrete(len(Actions))
@@ -119,9 +122,17 @@ class TradingEnv(gym.Env):
         
 
     def _get_observation(self):
-        obs = self.signal_features[(self._current_tick-self.window_size+1):self._current_tick+1]
-        return obs
+        if not self.ae is None:
+            return self.latent_observation()
+        else:
+            obs = self.signal_features[(self._current_tick-self.window_size+1):self._current_tick+1]
+            return obs
 
+    def latent_observation(self):
+        obs = self.signal_features[(self._current_tick-self.window_size+1):self._current_tick+1]
+        X = pre_input_process(obs, head=False)
+        X = F.normalize(X)
+        return self.ae.encode(X.float()).detach().numpy()
 
     def _update_history(self, info):
         if not self.history:

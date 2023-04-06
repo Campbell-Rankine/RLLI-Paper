@@ -56,6 +56,11 @@ def train_ae(args, data, keys):
     timesteps = list(range(0, shape[0] - (shape[0] % window)))
     print('Window Size: %i, length data: %i' % (window, shape[0] - (shape[0] % window)))
 
+    ### - Train set reduction as this is meant to just be a pretrain - ###
+    inds = np.random.uniform(0., len(keys), 100)
+    inds = [int(x) for x in inds]
+    keys = [keys[ind] for ind in inds] #Debug flag application
+
     ### - Train Loop - ###
     vqae.train()
     databar = tqdm(range(epochs))
@@ -76,7 +81,10 @@ def train_ae(args, data, keys):
                 ### - Forward Pass - ###
                 recon_loss = 0
                 #try: #Try - Except loop is bad practice but it's just an easier way of handling the mismatched data, because this is pretty much how its handled in the env
-                embedding_loss, x_hat, perplexity = vqae(X.float())
+                try:
+                    embedding_loss, x_hat, perplexity = vqae(X.float())
+                except RuntimeError:
+                    continue
                 recon_loss = 0.
                 if ae_params['recon_weight'] > 0.:
                     recon_loss = torch.mean((x_hat - X)**2) / train_var
@@ -90,19 +98,21 @@ def train_ae(args, data, keys):
                 if args.aegc > 0:
                     torch.nn.utils.clip_grad_norm(vqae.parameters(), args.aegc)
                 optimizer.step()
-
                 databar.set_description('Epoch: %i, Key: %s, Epoch Loss %.5f, Epoch Recon Error: %.5f, Epoch Perplexity: %.2f' %  (epoch_, key, np.mean(epoch_losses), np.mean(epoch_recon_errors), np.mean(epoch_perplexities)))
+
         results['recon_errors'].append(np.mean(epoch_recon_errors))
         results['loss_vals'].append(np.mean(epoch_losses))
         results['perplexities'].append(np.mean(epoch_perplexities))
+
         if epoch_ % args.aesv == 0:
             results['n_updates'] = timesteps[-1] * len(keys) * epochs
             hyperparameters = ae_params
             save_model_and_results(vqae, results, hyperparameters, 'Auto_Encoder_' + str(epoch_))
 
-            plt.scatter(timesteps, results['recon_errors'], 'tab:blue')
-            plt.savefig(ae_params['save path'] + + 'recon_' + str(epoch_) + '.png')
+            plt.scatter(list(range(len(results['recon_errors']))), results['recon_errors'], c='tab:blue')
+            plt.savefig(ae_params['save path'] + 'recon_' + str(epoch_) + '.png')
             plt.clf()
-            plt.scatter(timesteps, results['loss_vals'], 'tab:pink')
+
+            plt.scatter(list(range(len(results['loss_vals']))), results['loss_vals'], c='tab:pink')
             plt.savefig(ae_params['save path'] + 'loss_' + str(epoch_) + '.png')
             plt.clf()

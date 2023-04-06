@@ -14,9 +14,12 @@ trans_list = [transforms.ToTensor(),
 
 
 ### - Main Loop Helper Functions - ###
-def pre_input_process(X: pd.DataFrame, _transforms=[]) -> T.tensor:
-    X = X.head(600)
-    features = X.drop('close', axis=1).to_numpy()
+def pre_input_process(X: pd.DataFrame, _transforms=[], head=True) -> T.tensor:
+    if head:
+        X = X.head(600)
+        features = X.drop('close', axis=1).to_numpy()
+    else:
+        features = X
     _t = trans_list + _transforms
     _t = transforms.Compose([*_t])
     return _t(features)

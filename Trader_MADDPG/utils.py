@@ -1,7 +1,7 @@
 import numpy as np
 
 class OUActionNoise(object):
-    def __init__(self, mu, sigma=0.15, theta=.2, dt=1e-2, x0=None):
+    def __init__(self, mu, sigma=0.05, theta=.1, dt=1e-2, x0=None):
         """
         Temporally local, continous distribution sampler for exploration vs exploitation problem (Phil Tabour)
         """

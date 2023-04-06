@@ -198,13 +198,14 @@ class Agent(nn.Module):
         self.timestep = self.env._start_tick
 
     def next_step(self):
+        probs = self.predict_proba()
         action = self.choose_action()
         observation, step_reward, _done, info = self.env.step(action)
         self.obs = observation
-        return observation, action, step_reward, _done, info
+        return observation, action, step_reward, _done, info, probs
 
     def choose_action(self):
-        state = T.tensor([self.obs], dtype=T.float)#.to(self.actor.device)
+        state = T.tensor(self.obs, dtype=T.float).T#.to(self.actor.device)
         actions = self.actor.forward(state)
         actions = actions.detach().cpu().numpy() + self.noise()
         actions = actions[0][0]
@@ -219,9 +220,9 @@ class Agent(nn.Module):
         """
         Predict probabilities wrapper for numpy/sklearn library integration (Not used as part of my personal implementation but included for convenience)
         """
-        state = T.tensor([self.obs], dtype=T.float)#.to(self.actor.device)
+        state = T.tensor(self.obs, dtype=T.float).T#.to(self.actor.device)
         actions = self.actor.forward(state)
-        actions = actions.detach().cpu().numpy() + self.noise()
+        actions = actions.detach().cpu().numpy()
         actions = actions[0][0]
         return actions
     
@@ -229,16 +230,7 @@ class Agent(nn.Module):
         """
         Predict wrapper for the SHAP class and other numpy integrations
         """
-        state = T.tensor([self.obs], dtype=T.float)#.to(self.actor.device)
-        actions = self.actor.forward(state)
-        actions = actions.detach().cpu().numpy() + self.noise()
-        actions = actions[0][0]
-        max_a = np.argmax(actions)
-        if max_a == 0:
-            return 1*(general_params['max_action'] * actions[0])
-        if max_a == 1:
-            return -1*(general_params['max_action'] * actions[0])
-        return 0
+        return self.choose_action()
 
     def update_network_parameters(self, tau=None):
         """

@@ -20,18 +20,11 @@ def reward_1(action, owned, prices, tick, avail, worth_0, discount=0.9):
 def reward_2(action, owned, prices, tick, avail, discount=0.9):
     """
     Normalized 'worth' averaged over discounted timesteps
+
+    TODO: Fix this to make it a time dependent reward. Raise discount to the t, and multiply the reward by that
     """
-    diff = 0.
-    opp = 0.
-    if action == 1: 
-        diff = 1
-    elif action == -1:
-        diff = -1
-    else:
-        return (owned*prices[tick+1]) / np.max(prices)
-    curr_own = owned + diff
-    rew = np.mean([discount**(i)*x for i, x in enumerate(prices)])
-    return (curr_own + prices[tick+1]) / np.max(prices)
+    
+    return (discount**tick)*reward_1(action, owned, prices, tick, avail, 0)
 
 def reward_3(action, owned, prices, tick, avail):
     """

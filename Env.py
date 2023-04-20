@@ -70,6 +70,7 @@ class TradingEnv(gym.Env):
 
 
     def reset(self):
+        self.net_worth = 0
         self._done = False
         self._current_tick = self._start_tick
         self._last_trade_tick = self._current_tick - 1
@@ -248,7 +249,8 @@ class TradingEnv(gym.Env):
             self.available_funds -= self.prices[self._current_tick]
         if self._current_tick == self._start_tick:
             self.profit = 1
-        self.profit = ((self.num_owned * self.prices[self._current_tick]) + self.available_funds) - self.profit_0
+        self.net_worth = ((self.num_owned * self.prices[self._current_tick]) + self.available_funds)
+        self.profit = self.net_worth - self.profit_0
         if self._current_tick % 100 == 0:
             self.profit_0 = (self.num_owned*self.prices[self._current_tick]) + self.available_funds
         self._total_profit += self.profit

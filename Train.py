@@ -96,6 +96,9 @@ def parse_args_main():
     parser.add_argument("-mode", "--mode", dest="mode", metavar="mode", default = 'base',
                         type=str, help='Method of training: With or without autoencoded latent indicators')
     
+    parser.add_argument("-loadae", "--loadae", dest="loadae", metavar="loadae", default = -1,
+                        type=int, help='Method of training: With or without autoencoded latent indicators')
+    
     args = parser.parse_args()
 
     return args
@@ -132,26 +135,29 @@ def base_train(args, data, keys):
     databar = tqdm(range(epochs+1))
     actionwriter = SummaryWriter(general_params['log dir'] + 'actions')
     for i in databar: #Start of main loop
-        ### - Epoch Setup - ###
+         ### - Epoch Setup - ###
         bots.reset_environments(i, mem) #Basic loggers and trackers
         score = 0
         dones = [False]*bots.n_agents
         episode_steps = 0
 
+        ### - TensorBoard Logging - ###
+
         while not any(dones):
             ### - Episode Steps - ###
-            score, total_steps, episode_steps, infos, _dones, probs = bots.step(mem, total_steps, episode_steps, score) #Run Envs
-            actionwriter.add_scalars('Actions_' + str(i), {'buy': probs[0], 'sell': probs[1], 'hold': probs[2]}, total_steps)
-            actionwriter.flush()
+            score, total_steps, episode_steps, infos, _dones, probs, actions = bots.step(mem, total_steps, episode_steps, score) #Run Envs
             total_score+= score
             dones = _dones
-            if episode_steps % 100 ==0:
+            if episode_steps % 50 ==0:
                 databar.set_description('Epoch %d, Current Iters: %d, Episode Iters: %d, Mean Owned: %.2f. Mean Profit: %.2f, Mean Funds: %.2f, Sum Profit: %.2f' % 
                 (i, total_steps, episode_steps, sum([x.env.num_owned for x in bots.agents]) / bots.n_agents, sum([x.env.profit for x in bots.agents]) / bots.n_agents, 
                 sum([x.env.available_funds for x in bots.agents]) / len(bots.agents), sum([x.env.profit for x in bots.agents]) )) #Logging
-            actionwriter.add_scalar('total_profit', sum([x.env.profit for x in bots.agents]), total_steps)
-            for x in bots.agents:
+            actionwriter.add_scalar('total_profit_' + str(i), sum([x.env.profit for x in bots.agents]), total_steps)
+            actionwriter.flush()
+            for j, x in enumerate(bots.agents):
+                actionwriter.add_scalar(x.name + '_action', actions[j], total_steps)
                 actionwriter.add_scalars(x.name + '_profit', {'profit': x.env.profit, 'price': x.env.prices[x.env._current_tick]}, total_steps)
+            actionwriter.add_scalars('mean_losses_loss', {'critic loss': bots.critic_loss, 'actor loss': bots.actor_loss, 'encoder loss': bots.encoder_loss}, total_steps)
             actionwriter.flush()
         if i % 50 == 0:
             bots.get_renders(i, keys)
@@ -186,9 +192,11 @@ def latent_train(args, data, keys):
     print('loading Auto Encoder from path: %s' % ae_path)
     shape = data[keys[0]].shape
     vqae = VQVAE(shape[1]-1, num_hidden, num_res_hid, num_res_lay, num_embeddings, latent, beta)
-    cp = T.load(ae_path)
-    vqae.load_state_dict(cp['model'])
-    ae_optimizer = optim.Adam(vqae.parameters(), lr=lr, amsgrad=True)
+    if args.loadae > 0:
+        ae_path = general_params['ae_path'] + str(args.loadae) + '.pth'
+        cp = T.load(ae_path)
+        vqae.load_state_dict(cp['model'])
+    ae_optimizer = optim.Adam(vqae.encoder.parameters(), lr=lr, amsgrad=True)
     print(vqae)
 
     ### - Create Models - ###
@@ -222,16 +230,17 @@ def latent_train(args, data, keys):
         while not any(dones):
             ### - Episode Steps - ###
             score, total_steps, episode_steps, infos, _dones, probs, actions = bots.step(mem, total_steps, episode_steps, score) #Run Envs
-            actionwriter.add_scalars('Actions_' + str(i), {'buy': probs[0], 'sell': probs[1], 'hold': probs[2]}, total_steps)
-            actionwriter.flush()
             total_score+= score
             dones = _dones
             if episode_steps % 50 ==0:
                 databar.set_description('Epoch %d, Current Iters: %d, Episode Iters: %d, Mean Owned: %.2f. Mean Profit: %.2f, Mean Funds: %.2f, Sum Profit: %.2f' % 
                 (i, total_steps, episode_steps, sum([x.env.num_owned for x in bots.agents]) / bots.n_agents, sum([x.env.profit for x in bots.agents]) / bots.n_agents, 
                 sum([x.env.available_funds for x in bots.agents]) / len(bots.agents), sum([x.env.profit for x in bots.agents]) )) #Logging
-            actionwriter.add_scalar('total_profit_' + str(i), sum([x.env.profit for x in bots.agents]), total_steps)
-            for x in bots.agents:
+            actionwriter.add_scalar('total_profit_' + str(i), sum([x.env._total_profit for x in bots.agents]), total_steps)
+            actionwriter.add_scalar('net_worth_' + str(i), sum([x.env.net_worth for x in bots.agents]), total_steps)
+            actionwriter.flush()
+            for j, x in enumerate(bots.agents):
+                actionwriter.add_scalar(x.name + '_action', actions[j], total_steps)
                 actionwriter.add_scalars(x.name + '_profit', {'profit': x.env.profit, 'price': x.env.prices[x.env._current_tick]}, total_steps)
             actionwriter.add_scalars('mean_losses_loss', {'critic loss': bots.critic_loss, 'actor loss': bots.actor_loss, 'encoder loss': bots.encoder_loss}, total_steps)
             actionwriter.flush()

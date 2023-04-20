@@ -29,6 +29,8 @@ class MADDPG:
         self.latent=latent
         
         ### - Objects - ###
+        if not self.latent:
+            self.encoder_loss = 0
         self.agents = []
         self.obs_p = []
         self.n_agents = len(stock_keys)
@@ -65,16 +67,17 @@ class MADDPG:
         suggests using environments inside their respective classes instead of the main loop.
         """
         observations = []; actions=[]; step_rewards=[]; _dones=[]; infos=[]
-        skips = []
+        skips = []; probs = []
         for i, agent in enumerate(self.agents):
             if i in skips: #skip if this stock is done, continue training on other steps
                 continue
-            observation, action, step_reward, _done, info, probs = agent.next_step() #call environment run
+            observation, action, step_reward, _done, info, prob = agent.next_step() #call environment run
             observations.append(observation) #build all observations
             actions.append(action)
             step_rewards.append(step_reward)
             _dones.append(_done)
             infos.append(info)
+            probs.append(prob)
         
         ### - Final Processing - ###
         
@@ -172,13 +175,17 @@ class MADDPG:
                 critic_losses.append(agent.critic_loss.item())
         if self.latent and not self.latent_optimizer is None:
             self.latent_optimizer.zero_grad()
-            encoder_loss = -T.tensor(critic_losses, dtype=T.float, requires_grad=True).mean()
+            encoder_loss = T.tensor(critic_losses, dtype=T.float, requires_grad=True).mean() / np.max(critic_losses)
             encoder_loss.backward()
             self.latent_optimizer.step()
             with T.no_grad():
                 self.critic_loss = np.mean(critic_losses) / np.max(critic_losses)
                 self.actor_loss = np.mean(actor_losses)
                 self.encoder_loss = encoder_loss.item()
+        else:
+            with T.no_grad():
+                self.critic_loss = np.mean(critic_losses) / np.max(critic_losses)
+                self.actor_loss = np.mean(actor_losses)
 
     def update_environments(self):
         raise NotImplementedError

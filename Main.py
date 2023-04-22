@@ -24,6 +24,7 @@ from AE.PreTrain import train_ae
 from rewards import *
 from config import *
 from Train import _valid_df, parse_args_main, base_train, latent_train, process_command_line_arguments
+from Optimize_Train import *
 
 if __name__ == '__main__':
     args = parse_args_main()
@@ -31,8 +32,11 @@ if __name__ == '__main__':
     if args.ae:
         ### - Load Data - ###
         train_ae(args, data, keys)
-    elif args.mode == 'latent':
+    elif args.mode == 'latent'and not args.BT:
         latent_train(args, data, keys)
+    elif args.mode == 'latent'and args.BT:
+        latent_train(args, data, keys)
+        bayesian_train(args, data, keys)
     else:
         base_train(args, data, keys)
 

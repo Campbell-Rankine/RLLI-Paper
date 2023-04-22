@@ -99,6 +99,12 @@ def parse_args_main():
     parser.add_argument("-loadae", "--loadae", dest="loadae", metavar="loadae", default = -1,
                         type=int, help='Method of training: With or without autoencoded latent indicators')
     
+    ### - Bayes Opt Args - ###
+    parser.add_argument("-acq", "--acq", dest="acq", metavar="acq", default = 'EI',
+                        type=str, help='Acquisition Function for Bayesian Optimization')
+    parser.add_argument("-BT", "--BT", dest="BT", metavar="BT", default = False,
+                        type=bool, help='Toggle Bayes Opt')
+    
     args = parser.parse_args()
 
     return args

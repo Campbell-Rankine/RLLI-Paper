@@ -12,9 +12,7 @@ from Trader_MADDPG.MADDPG import *
 from Trader_MADDPG.network import *
 from Trader_MADDPG.utils import *
 
-
-from Data.data_utils import *
-from Data.data import *
+from data import *
 
 from Env import *
 from rewards import *
@@ -23,8 +21,9 @@ from AE.PreTrain import train_ae
 
 from rewards import *
 from config import *
-from Train import _valid_df, parse_args_main, base_train, latent_train, process_command_line_arguments
-from Optimize_Train import *
+from utils import *
+
+#TODO: change main function to include data
 
 if __name__ == '__main__':
     args = parse_args_main()
@@ -33,11 +32,18 @@ if __name__ == '__main__':
         ### - Load Data - ###
         train_ae(args, data, keys)
     elif args.mode == 'latent'and not args.BT:
+        from TrainStructures.latent import *
         latent_train(args, data, keys)
     elif args.mode == 'latent'and args.BT:
-        latent_train(args, data, keys)
-        bayesian_train(args, data, keys)
+        test_percentage = 0.1
+        inds = np.random.uniform(0., len(keys), int(test_percentage*len(keys)))
+        inds = [int(x) for x in inds]
+        train_keys = [keys[ind] for ind in inds] #Debug flag application
+        test_keys = list(set(keys)-set(train_keys))
+        from TrainStructures.optimizer import *
+        bayesian_train(args, data, train_keys, test_keys)
     else:
+        from TrainStructures.base import *
         base_train(args, data, keys)
 
 

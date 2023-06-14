@@ -144,7 +144,7 @@ class Critic(nn.Module):
 
 ### - Individual Agents - ###
 class Agent(nn.Module):
-    def __init__(self, env: TradingEnv, actor_dims, critic_dims, n_actions, n_agents, stock, verbose, dir='C:\Code\RLLI-Paper\checkpoint',
+    def __init__(self, env: TradingEnv, test_env: TradingEnv, actor_dims, critic_dims, n_actions, n_agents, stock, verbose, dir='C:\Code\RLLI-Paper\checkpoint',
                     alpha=0.01, beta=0.01, fc1=64, 
                     fc2=64, gamma=0.95, tau=0.01):
         """
@@ -177,6 +177,7 @@ class Agent(nn.Module):
         self.n_actions = int(n_actions)
         self.name = 'agent_' + stock
         self.env = env
+        self.test_env = test_env
         self.obs = self.env.display_config(self.verbose)
         self.timestep = self.env._current_tick
         self.n_agents = n_agents
@@ -197,10 +198,13 @@ class Agent(nn.Module):
         self.obs = self.env.reset()
         self.timestep = self.env._start_tick
 
-    def next_step(self):
+    def next_step(self, test=False):
         probs = self.predict_proba()
         action = self.choose_action()
-        observation, step_reward, _done, info = self.env.step(action)
+        if test:
+            observation, step_reward, _done, info = self.test_env.step(action)
+        else:
+            observation, step_reward, _done, info = self.env.step(action)
         self.obs = observation
         return observation, action, step_reward, _done, info, probs
 

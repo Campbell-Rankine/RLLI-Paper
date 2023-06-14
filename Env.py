@@ -16,7 +16,7 @@ class TradingEnv(gym.Env):
 
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, df, window_size, key, rew_fn='base', starting_funds=10000, in_house=.2, owned=0, shap=False, ae=None):
+    def __init__(self, df, window_size, key, rew_fn='base', starting_funds=10000, in_house=.2, owned=0, shap=False, ae=None, test_timeframe = 60, is_test=False):
 
         self.r_fn = get_rew(rew_fn)
         self.seed()
@@ -25,6 +25,9 @@ class TradingEnv(gym.Env):
         self.name = 'env_' + key
         self.key = key
         self.window_size = window_size
+        
+        self.test_timeframe = test_timeframe
+        self.is_test = is_test
         self.prices, self.signal_features = self._process_data()
         self.shape = (window_size, self.signal_features.shape[1])
 
@@ -205,7 +208,10 @@ class TradingEnv(gym.Env):
 
 
     def _process_data(self):
-        self.df = self.df.head(600)
+        if not self.is_test:
+            self.df = self.df[:-self.test_timeframe]
+        else:
+            self.df = self.df[-self.test_timeframe:]
         prices = self.df['close'].to_numpy()
         features = self.df.drop('close', axis=1).to_numpy()
         return prices, features
@@ -257,4 +263,7 @@ class TradingEnv(gym.Env):
 
 
     def max_possible_profit(self):  # trade fees are ignored
+        raise NotImplementedError
+    
+    def test_run(self, action):
         raise NotImplementedError

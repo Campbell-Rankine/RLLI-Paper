@@ -8,6 +8,7 @@ from torch import optim
 import numpy as np
 import argparse
 import matplotlib.pyplot as plt
+import tqdm
 
 ### - Module Imports - ###
 from AE.encoder import Encoder
@@ -15,8 +16,7 @@ from AE.Utils import *
 from AE.AE import *
 from AE.decoder import Decoder
 from config import *
-from Data.data import *
-from Train import _valid_df
+from data import *
 from utils import pre_input_process
 from utils import save_model_and_results
 

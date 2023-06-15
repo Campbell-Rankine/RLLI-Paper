@@ -1,7 +1,7 @@
 ### - Any Custom Built Reward Functions Go Here - ###
 from utils import *
 
-def reward_1(action, owned, prices, tick, avail, worth_0, discount=0.9):
+def reward_1(action, owned, prices, tick, avail, worth_0, discount=0.9, test = False):
     """
     Normalized 'worth' of current owned at the next timestep
     """
@@ -12,10 +12,22 @@ def reward_1(action, owned, prices, tick, avail, worth_0, discount=0.9):
     elif action == -1:
         diff = -1
     else:
-        return (owned*prices[tick+1]) / np.max(prices)
+        try:
+            return (owned*prices[tick+1]) / np.max(prices)
+        except:
+            if test:
+                return (owned*prices[tick-1]) / np.max(prices)
+            else:
+                raise IndexError
 
     curr_own = owned + diff
-    return (curr_own + prices[tick+1]) / np.max(prices)
+    try:
+        return (owned*prices[tick+1]) / np.max(prices)
+    except:
+        if test:
+            return (owned*prices[tick-1]) / np.max(prices)
+        else:
+            raise IndexError
 
 def reward_2(action, owned, prices, tick, avail, discount=0.9):
     """

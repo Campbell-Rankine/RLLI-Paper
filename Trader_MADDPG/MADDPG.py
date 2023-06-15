@@ -82,24 +82,24 @@ class MADDPG:
             probs.append(prob)
         
         ### - Final Processing - ###
-        
-        state= self.obs_format(observations)
-        state_p = self.obs_format(self.obs_p)
+        if not any(_dones):
+            state= self.obs_format(observations)
+            state_p = self.obs_format(self.obs_p)
 
-        ### - Store - ###
-        if self.latent:
-            raw = [x[:,0,0] for x in self.obs_p]
-            new = [x[:,0,0] for x in observations]
-            memory.store_transition(raw, state_p, actions, step_rewards, new, state, _dones)
-        else:
-            memory.store_transition(self.obs_p, state_p, actions, step_rewards, observations, state, _dones)
+            ### - Store - ###
+            if self.latent:
+                raw = [x[:,0,0] for x in self.obs_p]
+                new = [x[:,0,0] for x in observations]
+                memory.store_transition(raw, state_p, actions, step_rewards, new, state, _dones)
+            else:
+                memory.store_transition(self.obs_p, state_p, actions, step_rewards, observations, state, _dones)
 
-        if total_steps % 100 == 0:
-            self.learn(memory)
+            if total_steps % 100 == 0:
+                self.learn(memory)
 
-        self.obs_p = observations
+            self.obs_p = observations
 
-        score += sum(step_rewards)
+            score += sum(step_rewards)
 
         total_steps += 1
         episode_steps += 1
@@ -124,23 +124,11 @@ class MADDPG:
             _dones.append(_done)
             infos.append(info)
             probs.append(prob)
-        
-        ### - Final Processing - ###
-        
-        state= self.obs_format(observations)
-        state_p = self.obs_format(self.obs_p)
+            if _done:
+                break
 
-        ### - Store - ###
-        if self.latent:
-            raw = [x[:,0,0] for x in self.obs_p]
-            new = [x[:,0,0] for x in observations]
-            memory.store_transition(raw, state_p, actions, step_rewards, new, state, _dones)
-        else:
-            memory.store_transition(self.obs_p, state_p, actions, step_rewards, observations, state, _dones)
-
-        self.obs_p = observations
-
-        score += sum(step_rewards)
+        if not any(_dones):
+            score += sum(step_rewards)
 
         total_steps += 1
         episode_steps += 1
@@ -245,10 +233,13 @@ class MADDPG:
     def _get_collab_reward(self):
         raise NotImplementedError
 
-    def reset_environments(self, epoch, mem):
-        if epoch % 20 == 0:
-            mem.reset()
+    def reset_environments(self, epoch, mem, test=False):
+        """if epoch % 20 == 0:
+            mem.reset()"""
         self.obs_p = []
         for x in self.agents:
-            x.reset()
+            if not test:
+                x.reset()
+            else:
+                x.reset_test()
             self.obs_p.append(x.obs)

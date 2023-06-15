@@ -180,6 +180,7 @@ class Agent(nn.Module):
         self.test_env = test_env
         self.obs = self.env.display_config(self.verbose)
         self.timestep = self.env._current_tick
+        self.test_timestep = self.test_env._current_tick
         self.n_agents = n_agents
         self.actor_loss = None
         self.critic_loss = None
@@ -197,6 +198,10 @@ class Agent(nn.Module):
     def reset(self):
         self.obs = self.env.reset()
         self.timestep = self.env._start_tick
+
+    def reset_test(self):
+        self.obs = self.test_env.reset()
+        self.timestep = self.test_env._start_tick
 
     def next_step(self, test=False):
         probs = self.predict_proba()

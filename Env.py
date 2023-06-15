@@ -96,7 +96,7 @@ class TradingEnv(gym.Env):
         self._done = False
         self._current_tick += 1
 
-        if self._current_tick == self._end_tick:
+        if self._current_tick >= self._end_tick:
             self._done = True
 
         step_reward = self._calculate_reward(action)
@@ -219,7 +219,7 @@ class TradingEnv(gym.Env):
 
     def _calculate_reward(self, action):
         #Depends on how we're going to output from the individual DDPG models.
-        return self.r_fn(action, self.num_owned, self.prices, self._current_tick, self.available_funds, self.profit_0)
+        return self.r_fn(action, self.num_owned, self.prices, self._current_tick, self.available_funds, self.profit_0, test=self.is_test)
 
     def display_config(self, verbose, obs=None):
         """

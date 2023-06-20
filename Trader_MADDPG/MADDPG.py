@@ -124,8 +124,6 @@ class MADDPG:
             _dones.append(_done)
             infos.append(info)
             probs.append(prob)
-            if _done:
-                break
 
         if not any(_dones):
             score += sum(step_rewards)
@@ -223,8 +221,8 @@ class MADDPG:
 
     def get_renders(self, iteration, tickers):
         print('Rendering Decision History')
-        for x in self.agents:
-            if x.stock in tickers:
+        for i, x in enumerate(self.agents):
+            if x.stock in tickers and i % 20 == 0:
                 fpath = general_params['render_save'] + x.name + '_' + str(iteration) + '.png'
                 x.env.render_all()
                 x.env.save_rendering(fpath)

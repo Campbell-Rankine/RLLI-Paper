@@ -13,19 +13,19 @@ def reward_1(action, owned, prices, tick, avail, worth_0, discount=0.9, test = F
         diff = -1
     else:
         try:
-            return (owned*prices[tick+1]) / np.max(prices)
+            return -1 * ((owned*prices[tick+1]) / np.max(prices))
         except:
             if test:
-                return (owned*prices[tick-1]) / np.max(prices)
+                return -1 * ((owned*prices[tick-1]) / np.max(prices))
             else:
                 raise IndexError
 
     curr_own = owned + diff
     try:
-        return (owned*prices[tick+1]) / np.max(prices)
+        return -1 * ((owned*prices[tick+1]) / np.max(prices))
     except:
         if test:
-            return (owned*prices[tick-1]) / np.max(prices)
+            return -1 * (owned*prices[tick-1]) / np.max(prices)
         else:
             raise IndexError
 

@@ -209,9 +209,11 @@ class TradingEnv(gym.Env):
 
     def _process_data(self):
         if not self.is_test:
-            self.df = self.df[:-self.test_timeframe]
+            self.df = self.df[:general_params['test_indices'][0]]
         else:
-            self.df = self.df[-self.test_timeframe:]
+            self.df = self.df[general_params['test_indices'][0]:general_params['test_indices'][1]]
+        if len(self.df) == 0:
+            print(self.name, self.is_test)
         prices = self.df['close'].to_numpy()
         features = self.df.drop('close', axis=1).to_numpy()
         return prices, features

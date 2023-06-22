@@ -34,5 +34,7 @@ general_params = {
     'drop_tickers': ['CEG'],
     'num_act': 3,
     'max_action': 5,
-    'log dir': 'C:/Code/RLLI-Paper/results/maddpg_logging/'
+    'log dir': 'C:/Code/RLLI-Paper/results/maddpg_logging/',
+    'test_indices': [540, 620],
+    'drop_keys': ['OGN']
 }

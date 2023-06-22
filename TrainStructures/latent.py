@@ -36,7 +36,7 @@ def latent_train(args, data, keys):
     if args.debug:
         epochs = 1
     else:
-        epochs = 500
+        epochs = args.e
 
     print('Num Stocks: %d' % len(keys))
     ### - Load AutoEncoder - ###
@@ -69,7 +69,7 @@ def latent_train(args, data, keys):
     }
 
     bots = MADDPG(latent, len(keys) * latent, keys, 3, env_args, env_args_t, args.verbose, latent=True, latent_optimizer=ae_optimizer) #init bots
-    mem = MultiAgentReplayBuffer(99000, len(keys) * latent, latent, 3, len(keys), 1)
+    mem = MultiAgentReplayBuffer(1000000, len(keys) * latent, latent, 3, len(keys), 1)
 
     ### - START TRAIN LOOP - ###
     total_steps = 0 #Logging vars
@@ -95,6 +95,8 @@ def latent_train(args, data, keys):
                 databar.set_description('Epoch %d, Current Iters: %d, Episode Iters: %d, Mean Owned: %.2f. Mean Profit: %.2f, Mean Funds: %.2f, Sum Profit: %.2f, Testing Profit: %.2f' % 
                 (i, total_steps, episode_steps, sum([x.env.num_owned for x in bots.agents]) / bots.n_agents, sum([x.env.profit for x in bots.agents]) / bots.n_agents, 
                 sum([x.env.available_funds for x in bots.agents]) / len(bots.agents), sum([x.env.profit for x in bots.agents]), test_score )) #Logging
+        if i % 5 == 0 and i < 100:
+            mem.reset() #reset -> Unlearn past mistakes. Don't provide bad examples provide good examples. Might be worth looking into what 
         if i % 50 == 0:
             bots.get_renders(i, keys)
         test_score = test_all_bots(bots, mem)

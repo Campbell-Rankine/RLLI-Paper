@@ -69,7 +69,7 @@ def latent_train(args, data, keys):
     }
 
     bots = MADDPG(latent, len(keys) * latent, keys, 3, env_args, env_args_t, args.verbose, latent=True, latent_optimizer=ae_optimizer) #init bots
-    mem = MultiAgentReplayBuffer(1000000, len(keys) * latent, latent, 3, len(keys), 1)
+    mem = MultiAgentReplayBuffer(100000, len(keys) * latent, latent, 3, len(keys), 1)
 
     ### - START TRAIN LOOP - ###
     total_steps = 0 #Logging vars
@@ -97,9 +97,9 @@ def latent_train(args, data, keys):
                 sum([x.env.available_funds for x in bots.agents]) / len(bots.agents), sum([x.env.profit for x in bots.agents]), test_score )) #Logging
         if i % 5 == 0 and i < 100:
             mem.reset() #reset -> Unlearn past mistakes. Don't provide bad examples provide good examples. Might be worth looking into what 
-        if i % 50 == 0:
+        if i % 50 == 0 and args.render:
             bots.get_renders(i, keys)
-        test_score = test_all_bots(bots, mem)
+        test_score = test_all_bots(bots, mem, i)
             
     ### - Model Save - ###
     bots.save_checkpoint()

@@ -5,6 +5,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 from config import *
+from utils import WMA
+import matplotlib.pyplot as plt
+
 
 def test_additional_input_functions(am_func):
     if not callable(am_func) and not am_func is None:
@@ -12,7 +15,7 @@ def test_additional_input_functions(am_func):
         for x in am_func:
             assert(callable(x))
 
-def test_all_bots(bots, mem, logging=True, am_func=None):
+def test_all_bots(bots, mem, epoch, logging=True, am_func=None):
     """
     Run a testing evaluation on the bots using the Env Testing window to allow for easier day to day decision making
 
@@ -40,7 +43,7 @@ def test_all_bots(bots, mem, logging=True, am_func=None):
 
     ### - Summary Writer - ###
     actionwriter = SummaryWriter(general_params['log dir'] + 'actions')
-
+    test_scores = []
     while not any(dones):
         test_score, test_steps, test_steps, infos, _dones, probs, actions = bots.step_eval(mem, test_steps, test_steps, test_score) #Run Envs
         test_score += sum([x.test_env._total_profit for x in bots.agents])
@@ -50,7 +53,12 @@ def test_all_bots(bots, mem, logging=True, am_func=None):
                     #actionwriter.add_scalars(x.name + '_action', actions[j], test_steps)
                     actionwriter.add_scalar(x.name + '_price', x.test_env.prices[x.test_env._current_tick], test_steps)
                     actionwriter.add_scalar(x.name + '_worth', x.test_env.net_worth, test_steps)
-        actionwriter.add_scalar('Total Profit', sum([x.test_env._total_profit for x in bots.agents]), test_steps)
+        test_scores.append(sum([x.test_env._total_profit for x in bots.agents]))
     actionwriter.flush()
+    mov_avg = WMA(test_scores, 0)
+    test_scores = mov_avg.convert(3)
+    plt.plot(range(len(test_scores)), test_scores)
+    plt.savefig(general_params['render_save'] + 'test_score_ema_' + str(epoch) + '.png')
+    plt.clf()
     print('Testing total profit was: %0.2f' % test_score)
     return test_score

@@ -125,7 +125,7 @@ def parse_args_main():
 
 
     ### - Env Args - ###
-    parser.add_argument("-render", "--render", dest="render", metavar="render", default = False,
+    parser.add_argument("-render", "--render", dest="render", metavar="render", default = True,
                         type=bool, help="Gym Rendering Flag")
 
     ### - Misc. Args - ###
@@ -153,3 +153,30 @@ def parse_args_main():
     args = parser.parse_args()
 
     return args
+
+class WMA():
+    """
+    Return a windowed moving average of data converted to a size
+    """
+
+    def __init__(self, data: np.array, return_size: int):
+        self.data = data
+        self.return_size = return_size
+
+    def convert(self, size: int):
+        if self.return_size == 0:
+            return self.convert_exact(size)
+        elif self.return_size == -1:
+            return self.convert_as(size)
+        elif self.return_size == 1:
+            return self.convert_padded(size)
+        else:
+            raise AttributeError('Invalid input: make sure convert is corresponds to the following: -1 -> convert as is, no padding, size is reduced. 0 -> convert to a list of the exact size of the original. 1 -> 0 pad the data for conversion')
+    def convert_exact(self, size:int):
+        start_index = int(np.ceil(size/2)) #middle ground of 7 is 4 etc.
+        end_index = len(self.data) - start_index
+        _data = np.array([np.mean(self.data[i-start_index:i+start_index]) for i in range(start_index, end_index)])
+        for j in range(start_index):
+            np.insert(_data, j, np.mean(self.data[0:j]))
+            np.insert(_data, j, np.mean(_data[-(j+1):-1]))
+        return _data

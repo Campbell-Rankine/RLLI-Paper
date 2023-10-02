@@ -33,7 +33,7 @@ def latent_train(args, data, keys):
     epochs = args.e
 
     print('Num Stocks: %d' % len(keys))
-    
+
     ### - Load AutoEncoder - ###
     ae_path = general_params['ae_path'] + general_params['ae_pt_epoch'] + '.pth'
     print('loading Auto Encoder from path: %s' % ae_path)
@@ -83,7 +83,7 @@ def latent_train(args, data, keys):
                 sum([x.env.available_funds for x in bots.agents]) / len(bots.agents), sum([x.env.profit for x in bots.agents]), test_score )) #Logging
         if i % 5 == 0 and i < 100:
             mem.reset() #reset -> Unlearn past mistakes. Don't provide bad examples provide good examples. Might be worth looking into what 
-        if i % 50 == 0 and args.render:
+        if i % 5 == 0 and args.render:
             bots.get_renders(i, keys)
             
     ### - Model Save - ###

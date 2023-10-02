@@ -174,7 +174,7 @@ class TradingEnv(gym.Env):
 
     def render_all(self, mode='human'):
         window_ticks = np.arange(len(self._position_history))
-        plt.plot(self.prices)
+        plt.plot(self.profit)
 
         short_ticks = []
         long_ticks = []

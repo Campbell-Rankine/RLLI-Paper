@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 class MADDPG:
     def __init__(self, actor_dims, critic_dims, stock_keys, n_actions, env_args: dict, verbose,
                  scenario='s&p500',  timestep_0=30, alpha=0.01, beta=0.01, fc1=64, 
-                 fc2=64, gamma=0.99, tau=0.01, cp_='checkpoint/', latent=False, latent_optimizer=None):
+                 fc2=64, gamma=0.99, tau=0.01, cp_='~/Desktop/Python-Projects/checkpoint/', latent=False, latent_optimizer=None):
         """
         Actual Class containing all agents. See network file for information on params
         """
@@ -221,10 +221,10 @@ class MADDPG:
     def get_renders(self, iteration, tickers):
         print('Rendering Decision History')
         for i, x in enumerate(self.agents):
-            if x.stock in tickers and i % 20 == 0:
+            if x.stock in tickers:
                 fpath = general_params['render_save'] + x.name + '_' + str(iteration) + '.png'
                 x.env.render_all()
-                #x.env.save_rendering(fpath)
+                x.env.save_rendering(fpath)
             plt.clf()
 
     def _get_collab_reward(self):

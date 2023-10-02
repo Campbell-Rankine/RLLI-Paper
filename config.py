@@ -30,11 +30,11 @@ general_params = {
     'ae_pt_epoch': str(4),
     'path': 'data.pickle',
     'debug_len': 50,
-    'render_save': 'Renders/',
+    'render_save': '/home/campbell/Desktop/Python-Projects/RLLI-Paper/Renders/',
     'drop_tickers': ['CEG'],
     'num_act': 3,
     'max_action': 5,
-    'log dir': 'results/maddpg_logging/',
+    'log dir': '/home/campbell/Desktop/Python-Projects/RLLI-Paper/Results/logging',
     'test_indices': [540, 620],
     'drop_keys': ['OGN']
 }

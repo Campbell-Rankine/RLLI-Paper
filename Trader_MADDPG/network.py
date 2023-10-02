@@ -11,7 +11,7 @@ from config import *
 ### - Note we will have 1 agent per stock. Stock environments require a continuous output - ###
 
 class Actor(nn.Module):
-    def __init__(self, alpha, in_size, fc1, fc2, n_actions, name, dir='checkpoint'):
+    def __init__(self, alpha, in_size, fc1, fc2, n_actions, name, dir='/home/campbell/Desktop/Python-Projects/RLLI-Paper/checkpoint'):
         """
         Actor Class:
 
@@ -72,7 +72,7 @@ class Actor(nn.Module):
         self.load_state_dict(T.load(self.cp_))
 
 class Critic(nn.Module):
-    def __init__(self, beta, in_size, fc1, fc2, n_actions, n_agents, name, dir='checkpoint'):
+    def __init__(self, beta, in_size, fc1, fc2, n_actions, n_agents, name, dir='/home/campbell/Desktop/Python-Projects/RLLI-Paper/checkpoint'):
         """
         Critic Class:
 
@@ -144,7 +144,7 @@ class Critic(nn.Module):
 
 ### - Individual Agents - ###
 class Agent(nn.Module):
-    def __init__(self, env: TradingEnv, actor_dims, critic_dims, n_actions, n_agents, stock, verbose, dir='checkpoint',
+    def __init__(self, env: TradingEnv, actor_dims, critic_dims, n_actions, n_agents, stock, verbose, dir='/home/campbell/Desktop/Python-Projects/RLLI-Paper/checkpoint',
                     alpha=0.01, beta=0.01, fc1=64, 
                     fc2=64, gamma=0.95, tau=0.01):
         """

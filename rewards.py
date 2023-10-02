@@ -1,9 +1,11 @@
 ### - Any Custom Built Reward Functions Go Here - ###
 from utils import *
 
-def reward_1(action, owned, prices, tick, avail, worth_0, discount=0.9, test = False):
+
+### - Reward Function - ###
+def reward_1(funds, starting_funds, action, owned, prices, tick, total_timesteps):
     """
-    Normalized 'worth' of current owned at the next timestep
+    Normalized 'worth' of current owned at the next timestep. No testing support modified
     """
     diff = 0.
     opp = 0.
@@ -12,22 +14,10 @@ def reward_1(action, owned, prices, tick, avail, worth_0, discount=0.9, test = F
     elif action == -1:
         diff = -1
     else:
-        try:
-            return -1 * ((owned*prices[tick+1]) / np.max(prices))
-        except:
-            if test:
-                return -1 * ((owned*prices[tick-1]) / np.max(prices))
-            else:
-                raise IndexError
+        return ((((owned*prices[tick+1]) / np.max(prices)) / tick) + (funds/starting_funds)) / total_timesteps # Change epochs to tick in the final version
 
     curr_own = owned + diff
-    try:
-        return -1 * ((owned*prices[tick+1]) / np.max(prices))
-    except:
-        if test:
-            return -1 * (owned*prices[tick-1]) / np.max(prices)
-        else:
-            raise IndexError
+    return ((((owned*prices[tick+1]) / np.max(prices)) / tick) + (funds/starting_funds)) / total_timesteps
 
 def reward_2(action, owned, prices, tick, avail, discount=0.9):
     """

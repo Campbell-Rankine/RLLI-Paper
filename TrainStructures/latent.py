@@ -1,15 +1,14 @@
 from config import *
 from config import *
-import tqdm._tqdm as tqdm
-import argparse
 from tqdm import tqdm
+import argparse
+from tqdm._tqdm import *
 from data import *
 
 from Trader_MADDPG.MADDPG import *
 from Trader_MADDPG.buffer import *
 from AE.AE import *
 from torch import optim
-from Test import *
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -31,14 +30,10 @@ num_embeddings = ae_params['num embeddings']
 
 def latent_train(args, data, keys):
     print('Begin Latent Training')
-
-    ### - Set Debug - ###
-    if args.debug:
-        epochs = 1
-    else:
-        epochs = args.e
+    epochs = args.e
 
     print('Num Stocks: %d' % len(keys))
+    
     ### - Load AutoEncoder - ###
     ae_path = general_params['ae_path'] + general_params['ae_pt_epoch'] + '.pth'
     print('loading Auto Encoder from path: %s' % ae_path)
@@ -56,19 +51,10 @@ def latent_train(args, data, keys):
         'df': data,
         'window_size': ae_params['window'],
         'key': keys,
-        'rew_fn': args.reward,
         'ae': vqae,
-    }
-    env_args_t = { #Environments args to be passed to each agent
-        'df': data,
-        'window_size': ae_params['window'],
-        'key': keys,
-        'rew_fn': args.reward,
-        'ae': vqae,
-        'is_test': True,
     }
 
-    bots = MADDPG(latent, len(keys) * latent, keys, 3, env_args, env_args_t, args.verbose, latent=True, latent_optimizer=ae_optimizer) #init bots
+    bots = MADDPG(latent, len(keys) * latent, keys, 3, env_args, args.verbose, latent=True, latent_optimizer=ae_optimizer) #init bots
     mem = MultiAgentReplayBuffer(100000, len(keys) * latent, latent, 3, len(keys), 1)
 
     ### - START TRAIN LOOP - ###
@@ -99,7 +85,6 @@ def latent_train(args, data, keys):
             mem.reset() #reset -> Unlearn past mistakes. Don't provide bad examples provide good examples. Might be worth looking into what 
         if i % 50 == 0 and args.render:
             bots.get_renders(i, keys)
-        test_score = test_all_bots(bots, mem, i)
             
     ### - Model Save - ###
     bots.save_checkpoint()

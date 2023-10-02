@@ -13,21 +13,17 @@ import torch.nn.functional as F
 #TODO: Change this class to a dictionary of dataframes, iterating over multiple stocks
 
 class TradingEnv(gym.Env):
-
     metadata = {'render.modes': ['human']}
-
-    def __init__(self, df, window_size, key, rew_fn='base', starting_funds=10000, in_house=.2, owned=0, shap=False, ae=None, test_timeframe = 60, is_test=False):
-
-        self.r_fn = get_rew(rew_fn)
-        self.seed()
-        self.df = df[key]
+    
+    def __init__(self, df, window_size, key, starting_funds=10000, in_house=.2, owned=0, shap=False, ae=None):
+        self.df = df[key].drop('ticker', axis=1)
         assert self.df.ndim == 2
+
+        self.r_fn = reward_1
+        self.seed()
         self.name = 'env_' + key
         self.key = key
         self.window_size = window_size
-        
-        self.test_timeframe = test_timeframe
-        self.is_test = is_test
         self.prices, self.signal_features = self._process_data()
         self.shape = (window_size, self.signal_features.shape[1])
 
@@ -37,24 +33,23 @@ class TradingEnv(gym.Env):
 
         self.ae = ae
 
-        # spaces
-        self.action_space = spaces.Discrete(len(Actions))
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=self.shape, dtype=np.float64)
-
         # profit/reward
         self.in_house = in_house
 
         self.starting_funds = starting_funds
         self.total_funds = starting_funds
         self.available_funds = (starting_funds) - (self.in_house * starting_funds) #Available funds to spend
-        self.init_episode(owned)
 
-    def init_episode(self, owned):
+        # spaces
+        self.action_space = spaces.Discrete(len(Actions))
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=self.shape, dtype=np.float64)
+
+        self.init_episode()
+
+    ### - Initializer - ###
+    def init_episode(self):
         self.profit = 0.
-        self.profit_0 = (self.prices[0]*owned) + self.available_funds
         self.reward = 0.
-
-        # episode
         self._start_tick = self.window_size
         self._end_tick = len(self.prices) - 2
         self._done = None
@@ -67,11 +62,8 @@ class TradingEnv(gym.Env):
         self._first_rendering = None
         self.history = None
 
-    def seed(self, seed=None):
-        self.np_random, seed = seeding.np_random(seed)
-        return [seed]
 
-
+    ### - Main Gym Functions - ###
     def reset(self):
         self.net_worth = 0
         self._done = False
@@ -123,28 +115,35 @@ class TradingEnv(gym.Env):
         self._update_history(info)
 
         return observation, step_reward, self._done, info
-        
 
-    def _get_observation(self):
-        if not self.ae is None:
-            return self.latent_observation()
-        else:
-            obs = self.signal_features[(self._current_tick-self.window_size+1):self._current_tick+1]
-            return obs
 
-    def latent_observation(self):
-        obs = self.signal_features[(self._current_tick-self.window_size+1):self._current_tick+1]
-        X = pre_input_process(obs, head=False)
-        X = F.normalize(X)
-        return self.ae.encode(X.float()).detach().numpy()
+    ### - Utils - ###
+    def seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        return [seed]
+    
+    def display_config(self, verbose, obs=None):
+        """
+        Display the main characteristics of the environment, if calling at the beginning of training
+        this function will call reset and return the observation for ease of use
 
-    def _update_history(self, info):
-        if not self.history:
-            self.history = {key: [] for key in info.keys()}
+        Args:
+            obs:            (numpy.NDArray - (float)) - Most recent observable model input
+        """
+        if obs is None:
+            obs = self.reset()
+        if verbose:
+            print(obs)
+            print('Ticker: %s' % self.key)
+            print('------------------------------------------')
+            print('Observation Shape: ' + str(obs.shape))
+            print('Reward Function: %s' % self.r_fn.__name__)
+            print('Starting Funds: %.2f' % self.starting_funds)
+            print('Available Funds %.2f' % self.available_funds)
+            print('Timestep: %d' % self._current_tick)
+            print('Number of Stock Owned: %d' % self.num_owned)
 
-        for key, value in info.items():
-            self.history[key].append(value)
-
+        return obs
 
     def render(self, mode='human'):
 
@@ -173,7 +172,6 @@ class TradingEnv(gym.Env):
 
         plt.pause(0.01)
 
-
     def render_all(self, mode='human'):
         window_ticks = np.arange(len(self._position_history))
         plt.plot(self.prices)
@@ -194,57 +192,44 @@ class TradingEnv(gym.Env):
             "Total Profit: %.6f" % self._total_profit
         )
         
-        
     def close(self):
         plt.close()
-
 
     def save_rendering(self, filepath):
         plt.savefig(filepath)
 
-
     def pause_rendering(self):
         plt.show()
+    
 
-
+    ### - Helper Functions - ###
     def _process_data(self):
-        if not self.is_test:
-            self.df = self.df[:general_params['test_indices'][0]]
-        else:
-            self.df = self.df[general_params['test_indices'][0]:general_params['test_indices'][1]]
-        if len(self.df) == 0:
-            print(self.name, self.is_test)
         prices = self.df['close'].to_numpy()
         features = self.df.drop('close', axis=1).to_numpy()
         return prices, features
-
-
+    
     def _calculate_reward(self, action):
-        #Depends on how we're going to output from the individual DDPG models.
-        return self.r_fn(action, self.num_owned, self.prices, self._current_tick, self.available_funds, self.profit_0, test=self.is_test)
+        return self.r_fn(self.available_funds, self.starting_funds, action, self.num_owned, self.prices, self._current_tick, self._end_tick)
+    
+    def _get_observation(self):
+        if not self.ae is None:
+            return self.latent_observation()
+        else:
+            obs = self.signal_features[(self._current_tick-self.window_size+1):self._current_tick+1]
+            return obs
 
-    def display_config(self, verbose, obs=None):
-        """
-        Display the main characteristics of the environment, if calling at the beginning of training
-        this function will call reset and return the observation for ease of use
+    def latent_observation(self):
+        obs = self.signal_features[(self._current_tick-self.window_size+1):self._current_tick+1]
+        X = pre_input_process(obs, head=False)
+        X = F.normalize(X)
+        return self.ae.encode(X.float()).detach().numpy()
+    
+    def _update_history(self, info):
+        if not self.history:
+            self.history = {key: [] for key in info.keys()}
 
-        Args:
-            obs:            (numpy.NDArray - (float)) - Most recent observable model input
-        """
-        if obs is None:
-            obs = self.reset()
-        if verbose:
-            print(obs)
-            print('Ticker: %s' % self.key)
-            print('------------------------------------------')
-            print('Observation Shape: ' + str(obs.shape))
-            print('Reward Function: %s' % self.r_fn.__name__)
-            print('Starting Funds: %.2f' % self.starting_funds)
-            print('Available Funds %.2f' % self.available_funds)
-            print('Timestep: %d' % self._current_tick)
-            print('Number of Stock Owned: %d' % self.num_owned)
-
-        return obs
+        for key, value in info.items():
+            self.history[key].append(value)
 
     def _update_profit(self, action):
         if action == 0:
@@ -262,10 +247,3 @@ class TradingEnv(gym.Env):
         if self._current_tick % 100 == 0:
             self.profit_0 = (self.num_owned*self.prices[self._current_tick]) + self.available_funds
         self._total_profit += self.profit
-
-
-    def max_possible_profit(self):  # trade fees are ignored
-        raise NotImplementedError
-    
-    def test_run(self, action):
-        raise NotImplementedError

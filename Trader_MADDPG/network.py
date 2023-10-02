@@ -11,7 +11,7 @@ from config import *
 ### - Note we will have 1 agent per stock. Stock environments require a continuous output - ###
 
 class Actor(nn.Module):
-    def __init__(self, alpha, in_size, fc1, fc2, n_actions, name, dir='C:\Code\RLLI-Paper\checkpoint'):
+    def __init__(self, alpha, in_size, fc1, fc2, n_actions, name, dir='checkpoint'):
         """
         Actor Class:
 
@@ -72,7 +72,7 @@ class Actor(nn.Module):
         self.load_state_dict(T.load(self.cp_))
 
 class Critic(nn.Module):
-    def __init__(self, beta, in_size, fc1, fc2, n_actions, n_agents, name, dir='C:\Code\RLLI-Paper\checkpoint'):
+    def __init__(self, beta, in_size, fc1, fc2, n_actions, n_agents, name, dir='checkpoint'):
         """
         Critic Class:
 
@@ -144,7 +144,7 @@ class Critic(nn.Module):
 
 ### - Individual Agents - ###
 class Agent(nn.Module):
-    def __init__(self, env: TradingEnv, test_env: TradingEnv, actor_dims, critic_dims, n_actions, n_agents, stock, verbose, dir='C:\Code\RLLI-Paper\checkpoint',
+    def __init__(self, env: TradingEnv, actor_dims, critic_dims, n_actions, n_agents, stock, verbose, dir='checkpoint',
                     alpha=0.01, beta=0.01, fc1=64, 
                     fc2=64, gamma=0.95, tau=0.01):
         """
@@ -170,6 +170,8 @@ class Agent(nn.Module):
         """
         super(Agent, self).__init__()
 
+        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+
         ### - Copy Attributes - ###
         self.verbose = verbose
         self.gamma = gamma
@@ -177,10 +179,8 @@ class Agent(nn.Module):
         self.n_actions = int(n_actions)
         self.name = 'agent_' + stock
         self.env = env
-        self.test_env = test_env
         self.obs = self.env.display_config(self.verbose)
         self.timestep = self.env._current_tick
-        self.test_timestep = self.test_env._current_tick
         self.n_agents = n_agents
         self.actor_loss = None
         self.critic_loss = None
@@ -199,23 +199,16 @@ class Agent(nn.Module):
         self.obs = self.env.reset()
         self.timestep = self.env._start_tick
 
-    def reset_test(self):
-        self.obs = self.test_env.reset()
-        self.timestep = self.test_env._start_tick
-
     def next_step(self, test=False):
         probs = self.predict_proba()
         action = self.choose_action()
-        if test:
-            observation, step_reward, _done, info = self.test_env.step(action)
-        else:
-            observation, step_reward, _done, info = self.env.step(action)
+        observation, step_reward, _done, info = self.env.step(action)
         self.obs = observation
         return observation, action, step_reward, _done, info, probs
 
     def choose_action(self):
         state = T.tensor(self.obs, dtype=T.float).T#.to(self.actor.device)
-        actions = self.actor.forward(state)
+        actions = self.actor.forward(state.to(self.device))
         actions = actions.detach().cpu().numpy() + self.noise()
         actions = actions[0][0]
         max_a = np.argmax(actions)
@@ -230,7 +223,7 @@ class Agent(nn.Module):
         Predict probabilities wrapper for numpy/sklearn library integration (Not used as part of my personal implementation but included for convenience)
         """
         state = T.tensor(self.obs, dtype=T.float).T#.to(self.actor.device)
-        actions = self.actor.forward(state)
+        actions = self.actor.forward(state.to(self.device))
         actions = actions.detach().cpu().numpy()
         actions = actions[0][0]
         return actions

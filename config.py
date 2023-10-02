@@ -14,7 +14,7 @@ ae_params = {
     'window': 30,
     'latent': 64,
     'num embeddings': 512,
-    'save path': 'C:/Code/RLLI-Paper/ae_checkpoints/',
+    'save path': 'ae_checkpoints/',
     'additional transforms': [],
     'recon_weight': 1,
     'embedding_weight': 1,
@@ -26,15 +26,15 @@ trade_params = {
 }
 
 general_params = {
-    'ae_path': 'C:/Code/RLLI-Paper/vqvae_data_Auto_Encoder_',
+    'ae_path': 'vqvae_data_Auto_Encoder_',
     'ae_pt_epoch': str(4),
-    'path': 'C:\Code\RLLI-Paper\dataset_long_ind.pickle',
+    'path': 'data.pickle',
     'debug_len': 50,
-    'render_save': 'C:/Code/RLLI-Paper/Renders/',
+    'render_save': 'Renders/',
     'drop_tickers': ['CEG'],
     'num_act': 3,
     'max_action': 5,
-    'log dir': 'C:/Code/RLLI-Paper/results/maddpg_logging/',
+    'log dir': 'results/maddpg_logging/',
     'test_indices': [540, 620],
     'drop_keys': ['OGN']
 }

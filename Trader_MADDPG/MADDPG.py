@@ -6,9 +6,9 @@ from config import *
 import matplotlib.pyplot as plt
 
 class MADDPG:
-    def __init__(self, actor_dims, critic_dims, stock_keys, n_actions, env_args: dict, env_args_t: dict, verbose,
+    def __init__(self, actor_dims, critic_dims, stock_keys, n_actions, env_args: dict, verbose,
                  scenario='s&p500',  timestep_0=30, alpha=0.01, beta=0.01, fc1=64, 
-                 fc2=64, gamma=0.99, tau=0.01, cp_='/Users/bigc/RLLI-Paper/checkpoint/', latent=False, latent_optimizer=None):
+                 fc2=64, gamma=0.99, tau=0.01, cp_='checkpoint/', latent=False, latent_optimizer=None):
         """
         Actual Class containing all agents. See network file for information on params
         """
@@ -40,8 +40,7 @@ class MADDPG:
         ### - init the agents list - ###
         for i in range(len(stock_keys)):
             env_args['key'] = stock_keys[i]
-            env_args_t['key'] = stock_keys[i] 
-            self.agents.append(Agent(TradingEnv(**env_args), TradingEnv(**env_args_t), self.actor_dims, self.critic_dims, self.n_actions, self.n_agents, stock_keys[i], 
+            self.agents.append(Agent(TradingEnv(**env_args), self.actor_dims, self.critic_dims, self.n_actions, self.n_agents, stock_keys[i], 
                                     self.verbose, alpha=self.alpha, beta=self.beta, fc1=self.fc1, fc2=self.fc2, gamma=self.gamma, 
                                     tau=self.tau))
             self.obs_p.append(np.zeros(self.actor_dims))
@@ -225,7 +224,7 @@ class MADDPG:
             if x.stock in tickers and i % 20 == 0:
                 fpath = general_params['render_save'] + x.name + '_' + str(iteration) + '.png'
                 x.env.render_all()
-                x.env.save_rendering(fpath)
+                #x.env.save_rendering(fpath)
             plt.clf()
 
     def _get_collab_reward(self):

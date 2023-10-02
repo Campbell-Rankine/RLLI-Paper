@@ -28,7 +28,7 @@ from utils import *
 if __name__ == '__main__':
     args = parse_args_main()
     data, keys = load_dataset(general_params['path'], args.debug)
-    keys = keys[:-300]
+    keys = keys[:5]
     #for x in general_params['drop_keys']:
     #    keys.remove(x)
     if args.ae:
@@ -37,17 +37,6 @@ if __name__ == '__main__':
     elif args.mode == 'latent'and not args.BT:
         from TrainStructures.latent import *
         latent_train(args, data, keys)
-    elif args.mode == 'latent'and args.BT:
-        test_percentage = 0.1
-        inds = np.random.uniform(0., len(keys), int(test_percentage*len(keys)))
-        inds = [int(x) for x in inds]
-        train_keys = [keys[ind] for ind in inds] #Debug flag application
-        test_keys = list(set(keys)-set(train_keys))
-        from TrainStructures.optimizer import *
-        bayesian_train(args, data, train_keys, test_keys)
-    else:
-        from TrainStructures.base import *
-        base_train(args, data, keys)
 
 
     

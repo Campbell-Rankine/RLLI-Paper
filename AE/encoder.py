@@ -27,8 +27,8 @@ class Encoder(nn.Module):
 
     def __init__(self, in_dim, h_dim, n_res_layers, res_h_dim):
         super(Encoder, self).__init__()
-        kernel = 6
-        stride = 6
+        kernel = 3
+        stride = 2
         self.conv_stack = nn.Sequential(
             nn.Conv2d(in_dim, h_dim // 2, kernel_size=kernel,
                       stride=stride, padding=1),

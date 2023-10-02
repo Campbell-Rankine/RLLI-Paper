@@ -27,3 +27,7 @@ PSNR - AutoEncoder Reconstruction metric (may not be entirely useful as we never
 Actions at each timestep (Including logging the probability of taking each action)
 Built in support will be provided so that the user can pass their own custom functions to the testing function and they will be displayed in tensorboard
 
+### To Do:
+1) Implement testing suite.
+2) Make trader class more abstract
+3) Attempt to move to a more centralized approach

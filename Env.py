@@ -167,7 +167,7 @@ class TradingEnv(gym.Env):
 
         plt.suptitle(
             "Total Reward: %.6f" % self._total_reward + ' ~ ' +
-            "Total Profit: %.6f" % self._total_profit
+            "Total Profit: %.6f" % self.profit
         )
 
         plt.pause(0.01)
@@ -189,7 +189,7 @@ class TradingEnv(gym.Env):
 
         plt.suptitle(
             "Total Reward: %.6f" % self._total_reward + ' ~ ' +
-            "Total Profit: %.6f" % self._total_profit
+            "Total Profit: %.6f" % self.profit
         )
         
     def close(self):

@@ -4,6 +4,7 @@ from Trader_MADDPG.network import Agent
 from Env import TradingEnv
 from config import *
 import matplotlib.pyplot as plt
+plt.style.use('dark_background')
 
 class MADDPG:
     def __init__(self, actor_dims, critic_dims, stock_keys, n_actions, env_args: dict, verbose,
@@ -218,13 +219,15 @@ class MADDPG:
     def update_environments(self):
         raise NotImplementedError
 
-    def get_renders(self, iteration, tickers):
+    def get_renders(self, iteration, tickers, profits):
         print('Rendering Decision History')
         for i, x in enumerate(self.agents):
             if x.stock in tickers:
                 fpath = general_params['render_save'] + x.name + '_' + str(iteration) + '.png'
                 x.env.render_all()
                 x.env.save_rendering(fpath)
+                plt.clf()
+                plt.scatter(x=range(len(profits)), y=profits, c='tab:green', alpha=0.7)
             plt.clf()
 
     def _get_collab_reward(self):

@@ -72,11 +72,13 @@ def latent_train(args, data, keys):
 
         ### - TensorBoard Logging - ###
 
+        profits = []
         while not any(dones):
             ### - Episode Steps - ###
             score, total_steps, episode_steps, infos, _dones, probs, actions = bots.step(mem, total_steps, episode_steps, score) #Run Envs
             total_score+= score
             dones = _dones
+            profits.append(sum([x.env.profit for x in bots.agents]))
             if episode_steps % 50 ==0:
                 databar.set_description('Epoch %d, Current Iters: %d, Episode Iters: %d, Mean Owned: %.2f. Mean Profit: %.2f, Mean Funds: %.2f, Sum Profit: %.2f, Testing Profit: %.2f' % 
                 (i, total_steps, episode_steps, sum([x.env.num_owned for x in bots.agents]) / bots.n_agents, sum([x.env.profit for x in bots.agents]) / bots.n_agents, 
@@ -84,7 +86,7 @@ def latent_train(args, data, keys):
         if i % 5 == 0 and i < 100:
             mem.reset() #reset -> Unlearn past mistakes. Don't provide bad examples provide good examples. Might be worth looking into what 
         if i % 5 == 0 and args.render:
-            bots.get_renders(i, keys)
+            bots.get_renders(i, keys, profits)
             
     ### - Model Save - ###
     bots.save_checkpoint()

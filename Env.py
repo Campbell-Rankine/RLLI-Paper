@@ -9,6 +9,11 @@ import numpy as np
 from rewards import *
 from utils import *
 import torch.nn.functional as F
+from config import *
+
+import tensorboard as tb
+from torch.utils.tensorboard import SummaryWriter
+
 
 #TODO: Change this class to a dictionary of dataframes, iterating over multiple stocks
 
@@ -173,6 +178,7 @@ class TradingEnv(gym.Env):
         plt.pause(0.01)
 
     def render_all(self, mode='human'):
+        tbwriter = SummaryWriter(general_params['log dir'])
         window_ticks = np.arange(len(self._position_history))
         plt.plot(self.profit)
 

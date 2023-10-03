@@ -34,7 +34,12 @@ general_params = {
     'drop_tickers': ['CEG'],
     'num_act': 3,
     'max_action': 5,
-    'log dir': '/home/campbell/Desktop/Python-Projects/RLLI-Paper/Results/logging',
+    'log dir': '/home/campbell/Desktop/Python-Projects/RLLI-Paper/Results/logging/',
     'test_indices': [540, 620],
     'drop_keys': ['OGN']
+}
+
+env_params = {
+    'plot': 5,
+    'plot_list': None,
 }

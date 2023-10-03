@@ -9,7 +9,7 @@ plt.style.use('dark_background')
 class MADDPG:
     def __init__(self, actor_dims, critic_dims, stock_keys, n_actions, env_args: dict, verbose,
                  scenario='s&p500',  timestep_0=30, alpha=0.01, beta=0.01, fc1=64, 
-                 fc2=64, gamma=0.99, tau=0.01, cp_='~/Desktop/Python-Projects/checkpoint/', latent=False, latent_optimizer=None):
+                 fc2=64, gamma=0.99, tau=0.01, latent=False, latent_optimizer=None):
         """
         Actual Class containing all agents. See network file for information on params
         """
@@ -25,7 +25,6 @@ class MADDPG:
         self.tau = tau
         self.fc1 = fc1
         self.fc2 = fc2
-        self.cp_ = cp_
         self.timestep_0 = timestep_0
         self.current_t = timestep_0
         self.latent=latent

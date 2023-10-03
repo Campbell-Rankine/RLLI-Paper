@@ -33,7 +33,7 @@ def latent_train(args, data, keys):
     epochs = args.e
 
     print('Num Stocks: %d' % len(keys))
-
+    env_params['plot_list'] = [key for i, key in enumerate(keys) if i % env_params['plot'] == 0]
     ### - Load AutoEncoder - ###
     ae_path = general_params['ae_path'] + general_params['ae_pt_epoch'] + '.pth'
     print('loading Auto Encoder from path: %s' % ae_path)
@@ -63,6 +63,8 @@ def latent_train(args, data, keys):
     databar = tqdm(range(epochs+1))
     test_score = 0
 
+    tbwriter = SummaryWriter(general_params['log dir'])
+
     for i in databar: #Start of main loop
          ### - Epoch Setup - ###
         bots.reset_environments(i, mem) #Basic loggers and trackers
@@ -71,7 +73,8 @@ def latent_train(args, data, keys):
         episode_steps = 0
 
         ### - TensorBoard Logging - ###
-
+        buys = 0
+        sells = 0
         profits = []
         while not any(dones):
             ### - Episode Steps - ###
@@ -79,15 +82,24 @@ def latent_train(args, data, keys):
             total_score+= score
             dones = _dones
             profits.append(sum([x.env.profit for x in bots.agents]))
+            buys += np.sum([x for x in actions if x > 0])
+            sells += np.sum([x for x in actions if x < 0])
             if episode_steps % 50 ==0:
                 databar.set_description('Epoch %d, Current Iters: %d, Episode Iters: %d, Mean Owned: %.2f. Mean Profit: %.2f, Mean Funds: %.2f, Sum Profit: %.2f, Testing Profit: %.2f' % 
                 (i, total_steps, episode_steps, sum([x.env.num_owned for x in bots.agents]) / bots.n_agents, sum([x.env.profit for x in bots.agents]) / bots.n_agents, 
                 sum([x.env.available_funds for x in bots.agents]) / len(bots.agents), sum([x.env.profit for x in bots.agents]), test_score )) #Logging
-        if i % 5 == 0 and i < 100:
+
+                
+                tbwriter.add_scalar('Profit', np.sum([x.env.profit for x in bots.agents]), i)
+                tbwriter.add_scalar('Spending', np.sum([x.env.available_funds for x in bots.agents]), i)
+                tbwriter.add_scalars('Episode Average Action Statistics', {'Buys': buys / episode_steps, 'Sells': sells / episode_steps}, i) # Retu
+        buys = 0
+        sells = 0
+        if i % 10 == 0 and i < 50:
             mem.reset() #reset -> Unlearn past mistakes. Don't provide bad examples provide good examples. Might be worth looking into what 
         if i % 5 == 0 and args.render:
             bots.get_renders(i, keys, profits)
-            
+    tbwriter.close()
     ### - Model Save - ###
     bots.save_checkpoint()
     ### - Evaluation - ###

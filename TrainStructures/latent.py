@@ -98,13 +98,18 @@ def latent_train(args, data, keys):
 
         buys = 0
         sells = 0
-
-        if i % 5 == 0 and i < 20:
+        
+        if i % 2 == 0 and i < 10:
             # Consider this part a weight initialization and stability check. It stops the bot from learning the wrong decision making steps.
             print('Reset Bot Memory (Theoretically remove bad decisions)')
             mem.reset() #reset -> Unlearn past mistakes. Don't provide bad examples provide good examples. Might be worth looking into what 
 
-        if i > 20:
+        elif i % 5 == 0 and i < 20 and i >=10:
+            # Consider this part a weight initialization and stability check. It stops the bot from learning the wrong decision making steps.
+            print('Reset Bot Memory (Theoretically remove bad decisions)')
+            mem.reset() #reset -> Unlearn past mistakes. Don't provide bad examples provide good examples. Might be worth looking into what 
+
+        if i >= 20:
             print('Stop memory reset. Begin main training phase')
 
         if i % 5 == 0 and args.render:

@@ -34,9 +34,11 @@ def latent_train(args, data, keys):
 
     print('Num Stocks: %d' % len(keys))
     env_params['plot_list'] = [key for i, key in enumerate(keys) if i % env_params['plot'] == 0]
+
     ### - Load AutoEncoder - ###
     ae_path = general_params['ae_path'] + general_params['ae_pt_epoch'] + '.pth'
     print('loading Auto Encoder from path: %s' % ae_path)
+
     shape = data[keys[0]].shape
     vqae = VQVAE(shape[1]-1, num_hidden, num_res_hid, num_res_lay, num_embeddings, latent, beta)
     if args.loadae > 0:
@@ -62,7 +64,6 @@ def latent_train(args, data, keys):
     total_score = 0
     databar = tqdm(range(epochs+1))
     test_score = 0
-
     tbwriter = SummaryWriter(general_params['log dir'])
 
     for i in databar: #Start of main loop
@@ -79,27 +80,43 @@ def latent_train(args, data, keys):
         while not any(dones):
             ### - Episode Steps - ###
             score, total_steps, episode_steps, infos, _dones, probs, actions = bots.step(mem, total_steps, episode_steps, score) #Run Envs
+
             total_score+= score
             dones = _dones
             profits.append(sum([x.env.profit for x in bots.agents]))
             buys += np.sum([x for x in actions if x > 0])
             sells += np.sum([x for x in actions if x < 0])
+
             if episode_steps % 50 ==0:
                 databar.set_description('Epoch %d, Current Iters: %d, Episode Iters: %d, Mean Owned: %.2f. Mean Profit: %.2f, Mean Funds: %.2f, Sum Profit: %.2f, Testing Profit: %.2f' % 
                 (i, total_steps, episode_steps, sum([x.env.num_owned for x in bots.agents]) / bots.n_agents, sum([x.env.profit for x in bots.agents]) / bots.n_agents, 
                 sum([x.env.available_funds for x in bots.agents]) / len(bots.agents), sum([x.env.profit for x in bots.agents]), test_score )) #Logging
-
                 
-                tbwriter.add_scalar('Profit', np.sum([x.env.profit for x in bots.agents]), i)
-                tbwriter.add_scalar('Spending', np.sum([x.env.available_funds for x in bots.agents]), i)
-                tbwriter.add_scalars('Episode Average Action Statistics', {'Buys': buys / episode_steps, 'Sells': sells / episode_steps}, i) # Retu
+                tbwriter.add_scalar('Profit', np.sum([x.env.profit for x in bots.agents]), total_steps)
+                tbwriter.add_scalar('Spending', np.sum([x.env.available_funds for x in bots.agents]), total_steps)
+                tbwriter.add_scalars('Episode Average Action Statistics', {'Buys': buys / episode_steps, 'Sells': sells / episode_steps}, total_steps) # Returns
+
         buys = 0
         sells = 0
-        if i % 10 == 0 and i < 50:
+
+        if i % 5 == 0 and i < 20:
+            # Consider this part a weight initialization and stability check. It stops the bot from learning the wrong decision making steps.
+            print('Reset Bot Memory (Theoretically remove bad decisions)')
             mem.reset() #reset -> Unlearn past mistakes. Don't provide bad examples provide good examples. Might be worth looking into what 
+
+        if i > 20:
+            print('Stop memory reset. Begin main training phase')
+
         if i % 5 == 0 and args.render:
             bots.get_renders(i, keys, profits)
+
     tbwriter.close()
     ### - Model Save - ###
+    print('Saving Actor Critic Weights')
     bots.save_checkpoint()
-    ### - Evaluation - ###
+    print('Finished!')
+
+    print('Saving AutoEncoders')
+    for bot in bots.agents:
+        bot.env._save_AE()
+    print('Finished!')

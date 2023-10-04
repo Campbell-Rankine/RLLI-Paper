@@ -14,7 +14,7 @@ ae_params = {
     'window': 30,
     'latent': 64,
     'num embeddings': 512,
-    'save path': 'ae_checkpoints/',
+    'save path': '/home/campbell/Desktop/Python-Projects/RLLI-Paper/ae_checkpoints/',
     'additional transforms': [],
     'recon_weight': 1,
     'embedding_weight': 1,

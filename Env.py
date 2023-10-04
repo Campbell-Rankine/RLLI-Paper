@@ -150,33 +150,6 @@ class TradingEnv(gym.Env):
 
         return obs
 
-    def render(self, mode='human'):
-
-        def _plot_position(position, tick):
-            color = None
-            if position == Positions.Short:
-                color = 'red'
-            elif position == Positions.Long:
-                color = 'green'
-            if color:
-                plt.scatter(tick, self.prices[tick], color=color)
-
-        if self._first_rendering:
-            self._first_rendering = False
-            plt.cla()
-            plt.plot(self.prices)
-            start_position = self._position_history[self._start_tick]
-            _plot_position(start_position, self._start_tick)
-
-        _plot_position(self._position, self._current_tick)
-
-        plt.suptitle(
-            "Total Reward: %.6f" % self._total_reward + ' ~ ' +
-            "Total Profit: %.6f" % self.profit
-        )
-
-        plt.pause(0.01)
-
     def render_all(self, mode='human'):
         tbwriter = SummaryWriter(general_params['log dir'])
         window_ticks = np.arange(len(self._position_history))
@@ -253,3 +226,13 @@ class TradingEnv(gym.Env):
         if self._current_tick % 100 == 0:
             self.profit_0 = (self.num_owned*self.prices[self._current_tick]) + self.available_funds
         self._total_profit += self.profit
+
+    def _save_AE(self):
+        if not self.ae is None:
+            if not os.path.exists(ae_params['save path']):
+                os.mkdir(ae_params['save path'])
+            T.save(self.ae.state_dict(), ae_params['save path'] + 'AE_' + str(self.key))
+
+    def _load_AE(self, path):
+        if os.path.exists(path):
+            self.ae = self.ae.load_state_dict(T.load(path))

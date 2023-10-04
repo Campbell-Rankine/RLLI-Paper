@@ -28,7 +28,7 @@ from utils import *
 if __name__ == '__main__':
     args = parse_args_main()
     data, keys = load_dataset(general_params['path'], args.debug)
-    keys = keys[:30]
+    keys = keys[:args.k]
     #for x in general_params['drop_keys']:
     #    keys.remove(x)
     if args.ae:

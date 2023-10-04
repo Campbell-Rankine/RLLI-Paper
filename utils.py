@@ -86,6 +86,9 @@ def parse_args_main():
 
     parser.add_argument("-e", "--e", dest="e", metavar="epochs", default = 64,
                         type=int, help="default num epochs")
+    
+    parser.add_argument("-k", "--k", dest="k", metavar="k", default = 15,
+                        type=int, help="key filter number")
 
 
     ### - AE Args - ###

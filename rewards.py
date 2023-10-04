@@ -14,10 +14,10 @@ def reward_1(funds, starting_funds, action, owned, prices, tick, total_timesteps
     elif action == -1:
         diff = -1
     else:
-        return ((((owned*prices[tick+1]) / np.max(prices)) / tick) + (funds/starting_funds)) / total_timesteps # Change epochs to tick in the final version
+        return -((((owned*prices[tick+1]) / np.max(prices))) + (funds/starting_funds)) / total_timesteps # Change epochs to tick in the final version
 
     curr_own = owned + diff
-    return ((((owned*prices[tick+1]) / np.max(prices)) / tick) + (funds/starting_funds)) / total_timesteps
+    return -((((owned*prices[tick+1]) / np.max(prices))) + (funds/starting_funds)) / total_timesteps
 
 def reward_2(action, owned, prices, tick, avail, discount=0.9):
     """
